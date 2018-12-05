@@ -9,9 +9,17 @@ def play_game(board):
 
     while not board.game_over:
         board.print_board_state()
-        print("It is player {}'s turn".format(board.get_whose_turn()))
-        move = input("Please enter your move.")
-        int_move = int(move)
+
+        while True:
+            try:
+                print("\nIt is player {}'s turn".format(
+                    board.get_whose_turn()))
+                move = input("Please enter your move.")
+                int_move = int(move)
+                break
+            except ValueError:
+                print("That's not an int!")
+
         print("You chose move: {}".format(int_move))
         board.process_move(int_move)
 

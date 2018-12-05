@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     print("get play about to be called.")
     new_move = carlo.get_play()
-    print("THe new move is: {}".format(new_move))
+    print("The new move is: {}".format(new_move))
     print("After get play called.")
 
     winner = False
