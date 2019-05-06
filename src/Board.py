@@ -16,6 +16,7 @@ class Board(object):
 
     def current_player(self, state):
         #  Takes the game state and returns the current player's number.
+        print("current_player method")
         pass
 
     def next_state(self, state, play):
@@ -27,12 +28,14 @@ class Board(object):
             position_to_increment = 2  # todo play += 1
             holes_value = state[position_to_increment]
             state[position_to_increment] = holes_value
+        print("Pass")
         pass
 
     def legal_plays(self, state_history, ):
         # Takes a sequence of game states representing the full
         # game history, and returns the full list of moves that
         # are legal plays for the current player.
+        print("legal plays")
         pass
 
     def winner(self, state_history):
@@ -40,4 +43,5 @@ class Board(object):
         # game history.  If the game is now won, return the player
         # number.  If the game is still ongoing, return zero.  If
         # the game is tied, return a different distinct value, e.g. -1.
+        print("In winner method")
         pass
