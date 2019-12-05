@@ -1,5 +1,5 @@
-from MonteCarlo import MonteCarlo
-from Board import Board
+from src.MonteCarlo import MonteCarlo
+from src.Board import Board
 
 if __name__ == "__main__":
     time = 10
