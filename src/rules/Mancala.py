@@ -8,18 +8,24 @@ class Board(object):
         self.player_1_pit = 6
         self.player_2_pit = 13
         self.game_over = False
-        self.chelsea_rules = True
         self.winner = None
-        self.pairs = {0: 12, 1: 11, 2: 10, 3: 9, 4: 8, 5: 7,
-                      7: 5, 8: 4, 9: 3, 10: 2, 11: 1, 12: 0}
+        self.pairs = {0: 12, 1: 11, 2: 10,  3: 9,  4: 8,  5: 7,
+                      7:  5, 8:  4, 9:  3, 10: 2, 11: 1, 12: 0}
+
+    def __str__(self):
+        return "Board object for game Mancala"
 
     @staticmethod
     def initial_board():
         # Returns a representation of the starting state of the game
-        #   4  4  4 | 4  4  4        12 11 10 9  8  7
-        # 0                   0   13                  6 1st players home
-        #   4  4  4 | 4  4  4        0  1  2  3  4  5
+        #   4  4  4 | 4  4  4       12 11 10 | 9  8  7
+        # 0                   0  13                   6 1st players home
+        #   4  4  4 | 4  4  4       0  1  2  | 3  4  5
         return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
+
+    @staticmethod
+    def process_static_move(board, move):
+        board.process_move(move)
 
     def process_move(self, move):
         # Check that the chosen move is a legal move
@@ -129,6 +135,7 @@ class Board(object):
     def is_tie(self):
         return self.board_state[6] == self.board_state[13]
 
+    # TODO Check if game is over. even if it is a tie
     def get_winner(self):
         winning_player = self.board_state[6] > self.board_state[13]
         a = self.board_state[6]
@@ -195,3 +202,16 @@ class Board(object):
         own_pit = pit_to_add < 6 if self.is_player_1s_turn \
             else 6 < pit_to_add < 13
         return own_pit
+
+# From Board.py file
+    def next_state(self, state, play):
+        # Takes the game state, and the move to be applied.
+        # Returns the new game state.
+        pebbles = state[play]
+        print("Pebbles to move {}".format(pebbles))
+        for x in range(pebbles):
+            position_to_increment = 2  # todo play += 1
+            holes_value = state[position_to_increment]
+            state[position_to_increment] = holes_value
+        print("Pass")
+        pass

@@ -5,7 +5,7 @@ def play_game(board):
     print("Begin the real game logic.")
 
     # Start with player 2 as the beginner
-    board.switch_player()
+    # board.switch_player()
 
     while not board.game_over:
         board.print_board_state()
@@ -36,6 +36,7 @@ if __name__ == "__main__":
     mancala = Board()
     play_game(mancala)
     print("End of the main driver program.")
+
 
 def test_get_winner():
     mancala = Board()
