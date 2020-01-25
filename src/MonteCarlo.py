@@ -2,136 +2,195 @@ from __future__ import division
 import datetime
 from random import choice
 from cmath import log, sqrt
+import pickle
+import numpy as np
+import torch
+import datetime
+import datetime
+import logging
+from tqdm import tqdm
+
+logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
+                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+logger = logging.getLogger(__file__)
 
 
-class MonteCarlo(object):
-    def __init__(self, board, **kwargs):
-        # Takes an instance of a Board and optionally some keyword
-        # arguments.  Initializes the list of game states and the
-        # statistics tables.
-        self.board = board
-        self.states = []  # Authoritative record of the moves so far.
-        seconds = kwargs.get('time', 30)
-        self.calculation_time = datetime.timedelta(seconds=seconds)
-        self.max_moves = kwargs.get('max_moves', 100)
-        self.wins = {}  # dictionaries
-        self.plays = {}
-        # Larger values of C encourage more exploration of possibilities
-        # Smaller values cause the AI to concentrate on known good moves
-        self.C = kwargs.get('C', 1.4)
+class Node():
+    def __init__(self, game, move, parent=None):
+        self.game = game  # state s
+        self.move = move  # action index
+        self.is_expanded = False
+        self.parent = parent
+        self.children = {}
+        self.child_priors = np.zeros([6], dtype=np.float32)
+        self.child_total_value = np.zeros([6], dtype=np.float32)
+        self.child_number_visits = np.zeros([6], dtype=np.float32)
+        self.action_indexes = []
 
-    def print_variables(self):
-        print('Seconds: \n{}\nBoard: \n{}\nMax Moves: \n{}\n'.format(
-            self.calculation_time, self.board, self.max_moves))
+    @property
+    def number_visits(self):
+        return self.parent.child_number_visits[self.move]
 
-    def update(self, state):
-        # Takes a game state, and appends it to the history.
-        self.states.append(state)
+    @number_visits.setter
+    def number_visits(self, value):
+        self.parent.child_number_visits[self.move] = value
 
-    def get_play(self):
-        # Causes the AI to calculate the best move from the
-        # current game state and return it.
-        self.max_depth = 0
-        state = self.states[-1]
-        player = self.board.current_player(state)
-        legal = self.board.legal_plays(self.states[:])
+    @property
+    def total_value(self):
+        return self.parent.child_total_value[self.move]
 
-        # Bail out early if there is no real choice to be made.
-        if not legal:
-            return
-        if len(legal) == 1:
-            return legal[0]
+    @total_value.setter
+    def total_value(self, value):
+        self.parent.child_total_value[self.move] = value
 
-        games = 0
-        begin = datetime.datetime.utcnow()
-        while datetime.datetime.utcnow() - begin \
-                < self.calculation_time:
-            self.run_simulation()
-            games += 1
+    def child_Q(self):
+        return self.child_total_value / (1 + self.child_number_visits)
 
-        moves_states = [(p, self.board.next_state(state, p)) for p in
-                        legal]
+    def child_U(self):
+        return math.sqrt(self.number_visits) * (
+                abs(self.child_priors) / (1 + self.child_number_visits))
 
-        # Display the number of calls of `run_simulation` and the
-        # time elapsed.
-        print(games, datetime.datetime.utcnow() - begin)
+    def best_child(self):
+        if self.action_idxes != []:
+            bestmove = self.child_Q() + self.child_U()
+            bestmove = self.action_idxes[
+                np.argmax(bestmove[self.action_idxes])]
+        else:
+            bestmove = np.argmax(self.child_Q() + self.child_U())
+        return bestmove
 
-        # Pick the move with the highest percentage of wins.
-        percent_wins, move = max(
-            (self.wins.get((player, S), 0) /
-             self.plays.get((player, S), 1),
-             p)
-            for p, S in moves_states
-        )
+    def select_leaf(self):
+        current = self
+        while current.is_expanded:
+            best_move = current.best_child()
+            current = current.add_child(best_move)
+        return current
 
-        # Display the stats for each possible play.
-        for x in sorted(
-                ((100 * self.wins.get((player, S), 0) /
-                  self.plays.get((player, S), 1),
-                  self.wins.get((player, S), 0),
-                  self.plays.get((player, S), 0), p)
-                 for p, S in moves_states),
-                reverse=True
-        ):
-            print("{3}: {0:.2f}% ({1} / {2})".format(*x))
+    def add_dirichlet_noise(self, action_idxs, child_priors):
+        # select only legal moves entries in child_priors array
+        valid_child_priors = child_priors[action_idxs]
+        valid_child_priors = 0.75 * valid_child_priors + 0.25 * np.random.dirichlet(
+            np.zeros([len(valid_child_priors)], dtype=np.float32) + 192)
 
-        print("Maximum depth searched:", self.max_depth)
+        child_priors[action_idxs] = valid_child_priors
+        return child_priors
 
-        return move
 
-    def run_simulation(self):
-        # Plays out a "random" game from the current position,
-        # then updates the statistics tables with the result.
-        # A bit of an optimization here, so we have a local
-        # variable lookup instead of an attribute access each loop.
-        plays, wins = self.plays, self.wins
+    def expand(self, child_priors):
+        """Expand only nodes that result from legal moves, mask illegal
+        moves and add Dirichlet noise to prior probabilities of root node."""
+        action_idxs = self.game.actions();
+        self.is_expanded = False if action_idxs == [] else True
 
-        visited_states = set()
-        states_copy = self.states[:]
-        state = states_copy[-1]  # -1 means the last element in the list
-        player = self.board.current_player(state)
+        childPriors = child_priors
 
-        expand = True
-        for t in range(1, self.max_moves + 1):
-            legal = self.board.legal_plays(states_copy)
-            moves_states = [(p, self.board.next_state(state, p)) for p
-                            in legal]
+        self.action_indexes = action_idxs
+        childPriors[[i for i in range(len(child_priors)) if
+                    i not in action_idxs]] = 0.000000000  # mask all illegal actions
 
-            if all(plays.get((player, S)) for p, S in moves_states):
-                # If we have stats on the legal moves here, use them.
-                log_total = log(
-                    sum(plays[(player, S)] for p, S in moves_states))
-                value, move, state = max(
-                    ((wins[(player, S)] / plays[(player, S)]) +
-                     self.C * sqrt(log_total / plays[(player, S)]), p,
-                     S)
-                    for p, S in moves_states
-                )
-            else:
-                # Otherwise, just make an arbitrary decision.
-                move, state = choice(moves_states)
+        if self.parent.parent is None:  # add dirichlet noise to child_priors in root node
+            childPriors = self.add_dirichlet_noise(action_idxs, childPriors)
+        self.child_priors = childPriors
 
-            states_copy.append(state)
+    def add_child(self, move):
+        if move not in self.children:
+            copy_board = copy.deepcopy(self.game)  # make copy of board
+            # take the action on the copied board
+            copy_board = board.process_static_move(copy_board, move)
+            self.children[move] = UCTNode(copy_board, move, parent=self)
+        return self.children[move]
 
-            # `player` here and below refers to the player
-            # who moved into that particular state.
-            if expand and (player, state) not in plays:
-                expand = False
-                plays[(player, state)] = 0
-                wins[(player, state)] = 0
-                if t > self.max_depth:
-                    self.max_depth = t
+    def backup(self, value_estimate: float):
+        current = self
+        while current.parent is not None:
+            current.number_visits += 1
+            if current.game.player == 1:  # same as current.parent.game.player = 0
+                current.total_value += (1 * value_estimate)  # value estimate +1 = O wins
+            elif current.game.player == 0:  # same as current.parent.game.player = 1
+                current.total_value += (-1 * value_estimate)
+            current = current.parent
 
-            visited_states.add((player, state))
+class DummyNode(object):
+    def __init__(self):
+        self.parent = None
+        self.child_total_value = collections.defaultdict(float)
+        self.child_number_visits = collections.defaultdict(float)
 
-            player = self.board.current_player(state)
-            winner = self.board.winner(states_copy)
-            if winner:
-                break
 
-        for player, state in visited_states:
-            if (player, state) not in plays:
-                continue
-            plays[(player, state)] += 1
-            if player == winner:
-                wins[(player, state)] += 1
+def run_Monte_Carlo(args, start_idx=0, iteration=0):
+    net_to_play = "%s_iter%d.pth.tar" % (
+    args.neural_net_name, iteration)
+    net = NeuralNet()
+    cuda = torch.cuda.is_available()
+    if cuda:
+        net.cuda()
+
+    if args.MCTS_num_processes > 1:
+        logger.info("Preparing model for multi-process MCTS...")
+        mp.set_start_method("spawn", force=True)
+        net.share_memory()
+        net.eval()
+
+        current_net_filename = os.path.join("./model_data/", \
+                                            net_to_play)
+        if os.path.isfile(current_net_filename):
+            checkpoint = torch.load(current_net_filename)
+            net.load_state_dict(checkpoint['state_dict'])
+            logger.info("Loaded %s model." % current_net_filename)
+        else:
+            torch.save({'state_dict': net.state_dict()},
+                       os.path.join("./model_data/", \
+                                    net_to_play))
+            logger.info("Initialized model.")
+
+        processes = []
+        if args.MCTS_num_processes > mp.cpu_count():
+            num_processes = mp.cpu_count()
+            logger.info(
+                "Required number of processes exceed number of CPUs! Setting MCTS_num_processes to %d" % num_processes)
+        else:
+            num_processes = args.MCTS_num_processes
+
+        logger.info("Spawning %d processes..." % num_processes)
+        with torch.no_grad():
+            for i in range(num_processes):
+                p = mp.Process(target=MCTS_self_play, args=(
+                net, args.num_games_per_MCTS_process, start_idx, i,
+                args, iteration))
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
+        logger.info("Finished multi-process MCTS!")
+
+    elif args.MCTS_num_processes == 1:
+        logger.info("Preparing model for MCTS...")
+        net.eval()
+
+        current_net_filename = os.path.join("./model_data/", \
+                                            net_to_play)
+        if os.path.isfile(current_net_filename):
+            checkpoint = torch.load(current_net_filename)
+            net.load_state_dict(checkpoint['state_dict'])
+            logger.info("Loaded %s model." % current_net_filename)
+        else:
+            torch.save({'state_dict': net.state_dict()},
+                       os.path.join("./model_data/", net_to_play))
+            logger.info("Initialized model.")
+
+        with torch.no_grad():
+            MCTS_self_play(net, args.num_games_per_MCTS_process,
+                           start_idx, 0, args, iteration)
+        logger.info("Finished MCTS!")
+
+def save_as_pickle(filename, data):
+    completeName = os.path.join("./datasets/", filename)
+    with open(completeName, 'wb') as output:
+        pickle.dump(data, output)
+
+
+def load_pickle(filename):
+    completeName = os.path.join("./datasets/", filename)
+    with open(completeName, 'rb') as pkl_file:
+        data = pickle.load(pkl_file)
+    return data
