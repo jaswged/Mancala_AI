@@ -1,10 +1,11 @@
 class Board(object):
     def __init__(self):
         self.is_player_1s_turn = True
-        # self.board_state = [0,1,2,3,4,5, 0, 7,8,9,10,11,12, 0]
-        # self.board_state = [2, 3, 1, 0, 9, 0, 20, 1, 1, 0, 2, 8, 3, 4]
-        # self.board_state = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-        self.board_state = self.initial_board()
+        self.player = 1
+        # self.board_state = [0,1,2,3,4,5, 0, 7,8,9,10,11,12, 0, 1]
+        # self.board_state = [2, 3, 1, 0, 9, 0, 20, 1, 1, 0, 2, 8, 3, 4, 1]
+        # self.board_state = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1]
+        self.current_board = self.initial_board()
         self.player_1_pit = 6
         self.player_2_pit = 13
         self.game_over = False
@@ -18,27 +19,29 @@ class Board(object):
     @staticmethod
     def initial_board():
         # Returns a representation of the starting state of the game
+        # The 14th index represents whose turn it is.
         #   4  4  4 | 4  4  4       12 11 10 | 9  8  7
         # 0                   0  13                   6 1st players home
         #   4  4  4 | 4  4  4       0  1  2  | 3  4  5
-        return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
+        return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 1]
 
     @staticmethod
     def process_static_move(board, move):
-        board.process_move(move)
+        new_board = board.process_move(move)
+        return new_board
 
     def process_move(self, move):
         # Check that the chosen move is a legal move
-        print("Processing move {} for player {}"
-              .format(move, "1" if self.is_player_1s_turn else "2"))
+        print("Processing move {} for player {}. should be same as: {}"
+              .format(move, "1" if self.is_player_1s_turn else "2", self.player))
         if move not in self.get_legal_moves():
             # legal moves is the values of the moves not the indexes
             print("Not a valid move.")
             return
 
         # Get the marbles from the hole.
-        marbles = self.board_state[move]
-        self.board_state[move] = 0
+        marbles = self.current_board[move]
+        self.current_board[move] = 0
         print("Marbles in pit {} is {}".format(move, marbles))
 
         # Place the marbles around the board. Skipping opponent home
@@ -48,34 +51,33 @@ class Board(object):
             pit_to_add = self.get_pit_to_add(pit_to_add)
             print("in for loop for placing marbles. Adding to {}"
                   .format(pit_to_add))
-            self.board_state[pit_to_add] += 1
+            self.current_board[pit_to_add] += 1  # add 1 marble to pit
 
         # Check if pit was empty, steal from opponent only on your side
-        if self.board_state[pit_to_add] == 1 \
+        if self.current_board[pit_to_add] == 1 \
                 and self.own_side_pit(pit_to_add):
             print("Pit was empty. Steal the opponent marbles")
-            self.board_state[pit_to_add] = 0
+            self.current_board[pit_to_add] = 0
             amount_to_add = 1
+
             # Get the opposing side pit when zero
             opponent_pit = self.get_opposite_pit(pit_to_add)
-            amount_to_add += self.board_state[opponent_pit]
-            current_home = self.player_1_pit if self.is_player_1s_turn \
-                else self.player_2_pit
-            self.board_state[current_home] += amount_to_add
-            self.board_state[opponent_pit] = 0
+            amount_to_add += self.current_board[opponent_pit]
+            print("Steal {} marbles from opponent!".format(self.current_board[opponent_pit]))
+            self.current_board[opponent_pit] = 0
 
-            # Add marbles to players pit
+            # Add stolen marbles to current player's pit
             own_home = self.player_1_pit if self.is_player_1s_turn \
                 else self.player_2_pit
-            self.board_state[own_home] += amount_to_add
+            self.current_board[own_home] += amount_to_add
 
-        # if pit_to_add is own home. then free turn
+        # if pit_to_add is own home. then free turn else switch players
         if not self.own_home(pit_to_add):
             self.switch_player()
 
         # Check for the win conditions.
-        if self.board_state[self.player_1_pit] > 24 or \
-                self.board_state[self.player_2_pit] > 24:
+        if self.current_board[self.player_1_pit] > 24 or \
+                self.current_board[self.player_2_pit] > 24:
             self.game_over = True
 
         if self.marbles_gone_on_one_side():
@@ -86,7 +88,7 @@ class Board(object):
     def get_legal_moves(self):
         filtered = list(map(lambda x: x[0],
                             filter(lambda x: x[1] != 0,
-                                   enumerate(self.board_state))))
+                                   enumerate(self.current_board))))
 
         # Remove player homes from legal moves
         if self.player_1_pit in filtered:
@@ -96,12 +98,14 @@ class Board(object):
 
         board_side = list(filter(lambda x: x < 6, filtered)) \
             if self.is_player_1s_turn \
-            else list(filter(lambda x: x > 6, filtered))
+            else list(filter(lambda x: 6 < x < 14, filtered))
 
         return board_side
 
     def switch_player(self):
         self.is_player_1s_turn = not self.is_player_1s_turn
+        self.player = 1 if self.is_player_1s_turn else 2
+        self.current_board[14] = self.player
 
     def get_whose_turn(self):
         return 1 if self.is_player_1s_turn else 2
@@ -133,13 +137,13 @@ class Board(object):
         return own_home
 
     def is_tie(self):
-        return self.board_state[6] == self.board_state[13]
+        return self.current_board[6] == self.current_board[13]
 
     # TODO Check if game is over. even if it is a tie
     def get_winner(self):
-        winning_player = self.board_state[6] > self.board_state[13]
-        a = self.board_state[6]
-        b = self.board_state[13]
+        winning_player = self.current_board[6] > self.current_board[13]
+        a = self.current_board[6]
+        b = self.current_board[13]
         print("Player 1: {}, Player 2: {}".format(a, b))
         compare = (a > b) - (a < b)
         print("Compare to is: {}".format(compare))
@@ -147,53 +151,56 @@ class Board(object):
         print("Winner is: {}".format(winning_player))
         return winning_player
 
+    def check_winner(self):
+        return True
+
     def marbles_gone_on_one_side(self):
-        side1 = self.board_state[:6]
+        side1 = self.current_board[:6]
         if len(list(filter(lambda x: x == 0, side1))) == 6:
             return True
 
-        side2 = self.board_state[7:13]
+        side2 = self.current_board[7:13]
         if len(list(filter(lambda x: x == 0, side2))) == 6:
             return True
 
         return False
 
-    def print_board_state(self):
+    def print_current_board(self):
         print("\n\n")
         print("         12:{}  11:{}  10:{}  9:{}  8:{}  7:{}".format(
-                                                self.board_state[12],
-                                                self.board_state[11],
-                                                self.board_state[10],
-                                                self.board_state[9],
-                                                self.board_state[8],
-                                                self.board_state[7]))
-        print("2P Home:{}                                1P Home:{}".
-              format(self.board_state[13], self.board_state[6]))
+                                                self.current_board[12],
+                                                self.current_board[11],
+                                                self.current_board[10],
+                                                self.current_board[9],
+                                                self.current_board[8],
+                                                self.current_board[7]))
+        print("2P Home:{}                                1P Home:{}    Player {}'s turn".
+              format(self.current_board[13], self.current_board[6], self.current_board[14]))
         print("         0:{}   1:{}   2:{}   3:{}  4:{}  5:{}".format(
-                                                self.board_state[0],
-                                                self.board_state[1],
-                                                self.board_state[2],
-                                                self.board_state[3],
-                                                self.board_state[4],
-                                                self.board_state[5]))
+                                                self.current_board[0],
+                                                self.current_board[1],
+                                                self.current_board[2],
+                                                self.current_board[3],
+                                                self.current_board[4],
+                                                self.current_board[5]))
 
     def clean_up_winning_marbles(self):
-        print("Total before {}".format(self.board_state[6]))
+        print("Total before {}".format(self.current_board[6]))
         for x in range(6):
             print("x: {}".format(x))
-            to_add = self.board_state[x]
-            self.board_state[x] = 0
-            self.board_state[6] += to_add
-        print("Total after {}".format(self.board_state[6]))
+            to_add = self.current_board[x]
+            self.current_board[x] = 0
+            self.current_board[6] += to_add
+        print("Total after {}".format(self.current_board[6]))
 
         print("Total coins for second player")
-        print("Total before {}".format(self.board_state[13]))
+        print("Total before {}".format(self.current_board[13]))
         for x in range(7, 13):
             print("x: {}".format(x))
-            to_add = self.board_state[x]
-            self.board_state[x] = 0
-            self.board_state[13] += to_add
-        print("Total after {}".format(self.board_state[13]))
+            to_add = self.current_board[x]
+            self.current_board[x] = 0
+            self.current_board[13] += to_add
+        print("Total after {}".format(self.current_board[13]))
 
     def get_opposite_pit(self, pit):
         return self.pairs.get(pit)
@@ -202,16 +209,3 @@ class Board(object):
         own_pit = pit_to_add < 6 if self.is_player_1s_turn \
             else 6 < pit_to_add < 13
         return own_pit
-
-# From Board.py file
-    def next_state(self, state, play):
-        # Takes the game state, and the move to be applied.
-        # Returns the new game state.
-        pebbles = state[play]
-        print("Pebbles to move {}".format(pebbles))
-        for x in range(pebbles):
-            position_to_increment = 2  # todo play += 1
-            holes_value = state[position_to_increment]
-            state[position_to_increment] = holes_value
-        print("Pass")
-        pass
