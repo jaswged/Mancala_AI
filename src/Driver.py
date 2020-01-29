@@ -1,4 +1,10 @@
-from MonteCarlo import MonteCarlo
+#from MonteCarlo import MonteCarlo
+import NeuralNet
+from rules.Mancala import Board
+
+
+def train():
+    print("training")
 
 if __name__ == "__main__":
     time = 10
@@ -9,7 +15,9 @@ if __name__ == "__main__":
     print("After get play called.")
 
     winner = False
-    while not winner:
-        print("continue")
+    #while not winner:
+    #    print("continue")
+
+    train()
 
     print("End of the main driver program.")

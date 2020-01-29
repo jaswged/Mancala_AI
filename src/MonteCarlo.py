@@ -5,8 +5,6 @@ from cmath import log, sqrt
 import pickle
 import numpy as np
 import torch
-import datetime
-import datetime
 import logging
 from tqdm import tqdm
 
@@ -16,22 +14,71 @@ logger = logging.getLogger(__file__)
 
 
 class Node():
-    def __init__(self, game, move, parent=None):
-        self.game = game  # state s
-        self.move = move  # action index
-        self.is_expanded = False
+    def __init__(self, prior_policy, parent=None):
         self.parent = parent
         self.children = {}
         self.child_priors = np.zeros([6], dtype=np.float32)
         self.child_total_value = np.zeros([6], dtype=np.float32)
         self.child_number_visits = np.zeros([6], dtype=np.float32)
         self.action_indexes = []
+        self.expected_reward = 0
+        self.n_visits = 0
+        self.upper_confidence_bound = 0
+        self.policy = prior_policy
 
-    @property
+    def expand(self, action_priors):
+        """Expand tree by and create new child nodes
+        action_priors: a list of tuples of actions and their prior probability
+            according to the policy function."""
+        for action, prob in action_priors:
+            if action not in self.children:
+                self.children[action] = Node(self, prob)
+
+    def select(self, c_puct):
+        """Select action from children that has highest expected reward Q
+        Return: A tuple of (action, next_node)"""
+        return max(self.children.items(), key=lambda act_node: act_node[1].get_value(c_puct))
+
+    def update(self, leaf_value):
+        """Update node values from leaf evaluation.
+        leaf_value: the value of subtree evaluation from the current player's
+            perspective. """
+        # Increment visit.
+        self.n_visits += 1
+        # Update expectedReward Q, a running average of values for all visits.
+        self.expected_reward += 1.0*(leaf_value - self.expected_reward) / self.n_visits
+
+     def update_recursive(self, leaf_value):
+        """Like a call to update(), but applied recursively for all ancestors.
+        """
+        # If it is not root, this node's parent should be updated first.
+        if self.parent:
+            self.parent.update_recursive(-leaf_value)
+        self.update(leaf_value)
+
+    def get_value(self, c_puct):
+        """Calculate and return the value for this node.
+        It is a combination of leaf evaluations Q, and this node's prior
+        adjusted for its visit count, u.
+        c_puct: a number in (0, inf) controlling the relative impact of
+            value Q, and prior probability P, on this node's score."""
+        self.upper_confidence_bound = (c_puct * self.policy *
+                   np.sqrt(self.parent.n_visits) / (1 + self.n_visits))
+        return self.expected_reward + self.upper_confidence_bound
+
+    def is_leaf(self):
+        """Check if leaf node (i.e. no nodes below this have been expanded)."""
+        return self.children == {}
+
+    def is_root(self):
+        return self.parent is None + self.expected_reward
+
+
+    @property #TD
     def number_visits(self):
         return self.parent.child_number_visits[self.move]
 
-    @number_visits.setter
+    @number_visits.setter # TD
     def number_visits(self, value):
         self.parent.child_number_visits[self.move] = value
 
@@ -110,11 +157,108 @@ class Node():
                 current.total_value += (-1 * value_estimate)
             current = current.parent
 
-class DummyNode(object):
-    def __init__(self):
-        self.parent = None
-        self.child_total_value = collections.defaultdict(float)
-        self.child_number_visits = collections.defaultdict(float)
+class MonteCarlo(object):
+    """A simple implementation of Monte Carlo Tree Search."""
+    def __init__(self, policy_value_fn, c_puct=5, n_playout=10000):
+        """ policy_value_fn: a function that takes in a board state and outputs
+            a list of (action, probability) tuples and also a score in [-1, 1]
+            (i.e. the expected value of the end game score from the current
+            player's perspective) for the current player.
+            c_puct: a number in (0, inf) that controls how quickly exploration
+            converges to the maximum-value policy. A higher value means
+            relying on the prior more.  """
+        self.root = Node(None, 1.0)
+        self.policy = policy_value_fn
+        self.c_puct = c_puct
+        self.n_playout = n_playout
+
+    def _playout(self, state):
+        """Run a single playout from the root to the leaf, getting a value at
+        the leaf and propagating it back through its parents.
+        State is modified in-place, so a copy must be provided.
+        """
+        node = self.root
+        while(1):
+            if node.is_leaf():
+                break
+            # Greedily select next move.
+            action, node = node.select(self.c_puct)
+            state.do_move(action)
+
+        action_probs, _ = self.policy(state)
+        # Check for end of game
+        end, winner = state.game_end()
+        if not end:
+            node.expand(action_probs)
+        # Evaluate the leaf node by random rollout
+        leaf_value = self.evaluate_rollout(state)
+        # Update value and visit count of nodes in this traversal.
+        node.update_recursive(-leaf_value)
+
+    def _evaluate_rollout(self, state, limit=1000):
+        """Use the rollout policy to play until the end of the game,
+        returning +1 if the current player wins, -1 if the opponent wins,
+        and 0 if it is a tie.  """
+        player = state.get_current_player()
+        for i in range(limit):
+            end, winner = state.game_end()
+            if end:
+                break
+            action_probs = rollout_policy_fn(state)
+            max_action = max(action_probs, key=itemgetter(1))[0]
+            state.do_move(max_action)
+        else:
+            # If no break from the loop, issue a warning.
+            print("WARNING: rollout reached move limit")
+        if winner == -1:  # TODO tie
+            return 0
+        else:
+        return 1 if winner == player else -1
+
+    def get_move(self, state):
+        """Runs all playouts sequentially and returns the most visited action.
+        state: the current game state
+        Return: the selected action """
+        for n in range(self._n_playout):
+            state_copy = copy.deepcopy(state)
+            self._playout(state_copy)
+        return max(self._root._children.items(),
+        key=lambda act_node: act_node[1]._n_visits)[0]
+
+    def update_with_move(self, last_move):
+        """Step forward in the tree, keeping everything we already know
+        about the subtree. """
+        if last_move in self._root._children:
+            self._root = self._root._children[last_move]
+            self._root._parent = None
+        else:
+            self._root = TreeNode(None, 1.0)
+
+    def __str__(self):
+        return "Monte Carlo Tree Search"
+
+class MCTSPlayer(object):
+    """AI player based on MCTS"""
+    def __init__(self, c_puct=5, n_playout=2000):
+        self.mcts = MCTS(policy_value_fn, c_puct, n_playout)
+
+    def set_player_ind(self, p):
+        self.player = p
+
+    def reset_player(self):
+        self.mcts.update_with_move(-1)
+
+    def get_action(self, board):
+        sensible_moves = board.availables
+        if len(sensible_moves) > 0:
+            move = self.mcts.get_move(board)
+            self.mcts.update_with_move(-1)
+            return move
+        else:
+            print("WARNING: the board is full")
+
+    def __str__(self):
+        return "Monte Carlo Player {}".format(self.player)
 
 
 def run_Monte_Carlo(args, start_idx=0, iteration=0):
