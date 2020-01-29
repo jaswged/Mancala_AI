@@ -149,7 +149,7 @@ class Board(object):
         print("Compare to is: {}".format(compare))
 
         print("Winner is: {}".format(winning_player))
-        return winning_player
+        return True, winning_player
 
     def check_winner(self):
         return True

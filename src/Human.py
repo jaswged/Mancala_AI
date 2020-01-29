@@ -1,4 +1,4 @@
-from src.Board import Board
+from Mancala import Board
 
 
 def play_game(board):
