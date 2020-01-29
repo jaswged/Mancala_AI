@@ -142,7 +142,6 @@ def search(game, sim_nbr, net):
     return root
 
 
-
 def save_as_pickle(filename, data):
     complete_name  = os.path.join("./datasets/", filename)
     with open(complete_name, 'wb') as output:
