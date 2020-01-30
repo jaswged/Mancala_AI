@@ -25,11 +25,6 @@ class Board(object):
         #   4  4  4 | 4  4  4       0  1  2  | 3  4  5
         return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 1]
 
-    @staticmethod
-    def process_static_move(board, move):
-        new_board = board.process_move(move)
-        return new_board
-
     def process_move(self, move):
         # Check that the chosen move is a legal move
         print("Processing move {} for player {}. should be same as: {}"
@@ -152,7 +147,7 @@ class Board(object):
         return True, winning_player
 
     def check_winner(self):
-        return True
+        return self.game_over
 
     def marbles_gone_on_one_side(self):
         side1 = self.current_board[:6]

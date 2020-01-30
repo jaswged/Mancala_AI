@@ -8,7 +8,8 @@ import numpy as np
 import datetime
 import torch.multiprocessing as mp
 from rules.Mancala import Board
-from ConnectNet import ConnectNet
+from ConnectNet import ConnectNet, Net
+from NeuralNet import NeuralNet, PolicyValueNet
 from Node import Node
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
@@ -125,25 +126,32 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 def search(game, sim_nbr, net):
     root = Node(game, move=None, parent=None)
     logger.info("Search for best action")
+    net2 = Net()
+    net3 = NeuralNet(15)
+    #pnet = PolicyValueNet(15)
     for i in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
-        tensor_current_board = torch.tensor(leaf.game.current_board)
+        tensor_current_board = torch.tensor(leaf.game.current_board,
+                                            dtype=torch.float32)
         #encoded_s = ed.encode_board(leaf.game);  # put board into 3rd dimension tensor
         #encoded_s = encoded_s.transpose(2, 0, 1)
         #encoded_s = torch.from_numpy(encoded_s).float().cuda()
-        child_priors, value_estimate = net(tensor_current_board)
-        child_priors = child_priors.detach().cpu().numpy().reshape(-1)
+        child_priors, value_estimate = net3(tensor_current_board)
+        child_priors_numpy = child_priors.detach().cpu().numpy()
+        #child_priors = child_priors.detach().cpu().numpy().reshape(-1)
         value_estimate = value_estimate.item()
-        if leaf.game.check_winner() == True or leaf.game.actions() == []:  # if somebody won or draw
+
+        # Check if game over
+        if leaf.game.check_winner() is True:
             leaf.backup(value_estimate)
             continue
-        leaf.expand(child_priors)  # need to make sure valid moves
+        leaf.expand(child_priors_numpy)  # need to make sure valid moves
         leaf.backup(value_estimate)
     return root
 
 
 def save_as_pickle(filename, data):
-    complete_name  = os.path.join("./datasets/", filename)
+    complete_name = os.path.join("./datasets/", filename)
     with open(complete_name, 'wb') as output:
         pickle.dump(data, output)
 

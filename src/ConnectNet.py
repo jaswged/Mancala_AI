@@ -26,13 +26,13 @@ class board_data(Dataset):
 class ConvBlock(nn.Module):
     def __init__(self):
         super(ConvBlock, self).__init__()
-        self.action_size = 14  # TODO Change this input
+        self.action_size = 14
         self.conv1 = nn.Conv2d(3, 128, 3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(128)
 
     def forward(self, s):
         # batch_size x channels x board_x x board_y
-        #s = s.view(-1, 3, 6, 7)
+        s = s.view(-1, 3, 6, 7)
         s = F.relu(self.bn1(self.conv1(s.view(15))))
         return s
 
@@ -125,11 +125,11 @@ num_blocks = 6
 class Conv(nn.Module):
     def __init__(self, filters0, filters1, kernel_size, bn=False):
         super().__init__()
-        self.conv = nn.Conv2d(filters0, filters1, kernel_size, stride=1,
+        self.conv = nn.Conv1d(filters0, filters1, kernel_size, stride=1,
                               padding=kernel_size//2, bias=False)
         self.bn = None
         if bn:
-            self.bn = nn.BatchNorm2d(filters1)
+            self.bn = nn.BatchNorm1d(filters1)
 
     def forward(self, x):
         h = self.conv(x)
@@ -145,13 +145,14 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         return F.relu(x + (self.conv(x)))
 
+
 class Net(nn.Module):
     '''ニューラルネット計算を行うクラス'''
     def __init__(self):
         super().__init__()
         state = Board()
-        self.input_shape = state.feature().shape
-        self.board_size = self.input_shape[1] * self.input_shape[2]
+        self.input_shape = torch.tensor(state.current_board).shape
+        self.board_size = 15  # self.input_shape[1] * self.input_shape[2]
 
         self.layer0 = Conv(self.input_shape[0], num_filters, 3, bn=True)
         self.blocks = nn.ModuleList([ResidualBlock(num_filters)

@@ -32,7 +32,7 @@ if __name__ == "__main__":
     best_NN = net
 
     # setup Train and Arena
-    train = Train()
+    #train = Train()
     arena = Arena()
 
     if not os.path.isdir("datasets"):
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
         # Train NN on games from replay buffer
         # Save new version pickle
-        train.run()
+        #train.run()
 
         # pit new version against reigning champion in the Arena
         # Take new one if it wins 55% of matches
