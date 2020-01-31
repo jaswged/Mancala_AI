@@ -9,7 +9,7 @@ import datetime
 import torch.multiprocessing as mp
 from rules.Mancala import Board
 from ConnectNet import ConnectNet, Net
-from NeuralNet import NeuralNet, PolicyValueNet
+from NeuralNet import NeuralNet, TwoLayerNet, JasonNet
 from Node import Node
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
@@ -70,7 +70,6 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
         game = Board()  # new game to play with
         is_game_over = False
         replay_buffer = []  # (state, policy, value) for NN training
-        states = []
         value = 0  # winning player?
         move_count = 0  # number of moves so far in the game
 
@@ -84,43 +83,46 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
                 t = 0.1
 
             state_copy = copy.deepcopy(game.current_board)
-            states.append(state_copy)
 
             root = search(game, 777, net)  # TODO put 777 in config
             policy = get_policy(root, t);
             print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
 
-            game = do_decode_n_move_pieces(game, \
-                                                    np.random.choice(  # Todo shouldn't this be from the action space? current_board.actions()
-                                                        np.array(
-                                                            [0, 1, 2, 3,
-                                                             4, 5, 6]), \
-                                                        p=policy))  # decode move and move piece(s)
+            # current_board = do_decode_n_move_pieces(current_board, \
+            #                          np.random.choice(
+            #                          np.array([0, 1, 2, 3,4, 5, 6]), \
+            #                                       p=policy))
+            game.process_move(np.random.choice(game.get_legal_moves(),
+                                               p=policy))
             replay_buffer.append([state_copy, policy])
-            print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" % (
-                iteration, cpu, ind), game.current_board,
-                game.player);
+            print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
+                  (iteration, cpu, ind),game.current_board, game.player)
             print(" ")
-            if game.check_winner() == True:  # if somebody won
-                if game.player == 0:  # black wins
-                    value = -1
-                elif game.player == 1:  # white wins
-                    value = 1
+            if game.game_over() is True:  # if somebody won
+                # TODO winner is not so simple. negative for player 2
+                #  with absolute value on player 2?
+                # if game.player == 1:  # black wins
+                #     value = 1
+                # elif game.player == 2:  # white wins
+                #     value = 2
+                value = game.player
                 is_game_over = True
             move_count += 1
-        dataset_p = []
-        for idx, data in enumerate(replay_buffer):  # dataset is [boardstate, policy]
+        dataset = []
+        # replay_buffer is [boardstate, policy]
+        # TODO debug this to see what value contains.
+        for idx, data in enumerate(replay_buffer):
             s, p = data
             if idx == 0:
-                dataset_p.append([s, p, 0])
+                dataset.append([s, p, 0])
             else:
-                dataset_p.append([s, p, value])
+                dataset.append([s, p, value])
         del replay_buffer
         save_as_pickle("iter_%d/" % iteration + \
                        "dataset_iter%d_cpu%i_%i_%s" % (
                        iteration, cpu, ind,
                        datetime.datetime.today().strftime("%Y-%m-%d")),
-                       dataset_p)
+                       dataset)
 
 
 def search(game, sim_nbr, net):
@@ -128,14 +130,32 @@ def search(game, sim_nbr, net):
     logger.info("Search for best action")
     net2 = Net()
     net3 = NeuralNet(15)
+    jason = JasonNet()
+
+    #from pytorch example
+    N, D_in, H, D_out = 64, 1000, 100, 10
+    x = torch.randn(N, D_in)
+    y = torch.randn(N, D_out)
+    net4 = TwoLayerNet(D_in, H, D_out)
+    criterion = torch.nn.MSELoss(reduction='sum')
+    optimizer = torch.optim.SGD(net4.parameters(), lr=1e-4)
+    y_pred = net4(x)
+    loss = criterion(y_pred, y)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
     #pnet = PolicyValueNet(15)
     for i in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
         tensor_current_board = torch.tensor(leaf.game.current_board,
                                             dtype=torch.float32)
+        # return a new tensor with a 1 dimension added at provided index
+        tensor_current_board_squeezed = tensor_current_board.unsqueeze(0).unsqueeze(0)
         #encoded_s = ed.encode_board(leaf.game);  # put board into 3rd dimension tensor
         #encoded_s = encoded_s.transpose(2, 0, 1)
         #encoded_s = torch.from_numpy(encoded_s).float().cuda()
+        jason_policy, jason_estimate = jason(tensor_current_board_squeezed)
         child_priors, value_estimate = net3(tensor_current_board)
         child_priors_numpy = child_priors.detach().cpu().numpy()
         #child_priors = child_priors.detach().cpu().numpy().reshape(-1)
@@ -148,6 +168,10 @@ def search(game, sim_nbr, net):
         leaf.expand(child_priors_numpy)  # need to make sure valid moves
         leaf.backup(value_estimate)
     return root
+
+
+def get_policy(root, temp=1):
+    return ((root.child_number_visits) ** (1 / temp)) / sum(root.child_number_visits ** (1 / temp))
 
 
 def save_as_pickle(filename, data):

@@ -163,3 +163,60 @@ class PolicyValueNet:
         """ save model params to file """
         net_params = self.get_policy_param()  # get model params
         torch.save(net_params, model_file)
+
+
+class TwoLayerNet(torch.nn.Module):
+    def __init__(self, D_in, H, D_out):
+        """ In the constructor we instantiate two nn.Linear modules and
+        assign them as member variables. """
+        super(TwoLayerNet, self).__init__()
+        self.linear1 = torch.nn.Linear(D_in, H)
+        self.linear2 = torch.nn.Linear(H, D_out)
+
+    def forward(self, x):
+        """ In the forward function we accept a Tensor of input data and
+        we must return a Tensor of output data.
+        We can use Modules defined in the constructor as well as
+        arbitrary operators on Tensors. """
+        h_relu = self.linear1(x).clamp(min=0)
+        y_pred = self.linear2(h_relu)
+        return y_pred
+
+
+class JasonNet(torch.nn.Module):
+    def __init__(self):
+        super(JasonNet, self).__init__()
+        self.board_size = 14
+
+        # common layers
+        self.cnn1d_1 = torch.nn.Conv1d(in_channels=1, out_channels=3,
+                                       kernel_size=3, stride=1)
+        self.conv1 = nn.Conv1d(3, 13, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(13, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv1d(64, 128, kernel_size=3, padding=1)
+        # action policy layers
+        self.act_conv1 = nn.Conv1d(128, 4, kernel_size=1)
+        self.act_fc1 = nn.Linear(52, self.board_size)
+        # state value layers
+        self.val_conv1 = nn.Conv1d(128, 2, kernel_size=1)
+        self.val_fc1 = nn.Linear(26, 32)
+        self.val_fc2 = nn.Linear(32, 1)
+        self.val_fc3 = nn.Linear(1, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.cnn1d_1(x))
+        x = torch.relu(self.conv1(x))
+        x = torch.relu(self.conv2(x))
+        x = torch.relu(self.conv3(x))
+
+        # action policy layers
+        x_act = torch.relu(self.act_conv1(x))
+        x_act = F.log_softmax(self.act_fc1(x_act.view(-1, 52)))
+        # state value layers
+        x_val = torch.relu(self.val_conv1(x))
+        x_val = x_val.view(-1, 2*self.board_size - 2)
+        x_val = torch.relu(self.val_fc1(x_val))
+        # UserWarning: nn.functional.tanh is deprecated.
+        # Use torch.tanh instead.
+        x_val = torch.tanh(self.val_fc2(x_val))
+        return x_act, x_val
