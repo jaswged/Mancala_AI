@@ -211,7 +211,8 @@ class JasonNet(torch.nn.Module):
 
         # action policy layers
         x_act = torch.relu(self.act_conv1(x))
-        x_act = F.log_softmax(self.act_fc1(x_act.view(-1, 52)))
+        x_act = torch.log_softmax(input=self.act_fc1(x_act.view(-1, 52))
+                                  ,dim=1)
         # state value layers
         x_val = torch.relu(self.val_conv1(x))
         x_val = x_val.view(-1, 2*self.board_size - 2)

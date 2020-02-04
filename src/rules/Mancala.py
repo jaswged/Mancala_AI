@@ -10,6 +10,7 @@ class Board(object):
         self.player_2_pit = 13
         self.game_over = False
         self.winner = None
+        self.is_printing = False
         self.pairs = {0: 12, 1: 11, 2: 10,  3: 9,  4: 8,  5: 7,
                       7:  5, 8:  4, 9:  3, 10: 2, 11: 1, 12: 0}
 
@@ -37,11 +38,13 @@ class Board(object):
         # Get the marbles from the hole.
         marbles = self.current_board[move]
         self.current_board[move] = 0
-        print("Marbles in pit {} is {}".format(move, marbles))
+        if self.is_printing:
+            print("Marbles in pit {} is {}".format(move, marbles))
 
         # Place the marbles around the board. Skipping opponent home
         pit_to_add = move
-        print("pit to add {}".format(pit_to_add))
+        if self.is_printing:
+            print("pit to add {}".format(pit_to_add))
         for m in range(marbles):
             pit_to_add = self.get_pit_to_add(pit_to_add)
             print("in for loop for placing marbles. Adding to {}"
@@ -51,14 +54,16 @@ class Board(object):
         # Check if pit was empty, steal from opponent only on your side
         if self.current_board[pit_to_add] == 1 \
                 and self.own_side_pit(pit_to_add):
-            print("Pit was empty. Steal the opponent marbles")
+            if self.is_printing:
+                print("Pit was empty. Steal the opponent marbles")
             self.current_board[pit_to_add] = 0
             amount_to_add = 1
 
             # Get the opposing side pit when zero
             opponent_pit = self.get_opposite_pit(pit_to_add)
             amount_to_add += self.current_board[opponent_pit]
-            print("Steal {} marbles from opponent!".format(self.current_board[opponent_pit]))
+            if self.is_printing:
+                print("Steal {} marbles from opponent!".format(self.current_board[opponent_pit]))
             self.current_board[opponent_pit] = 0
 
             # Add stolen marbles to current player's pit
@@ -79,6 +84,10 @@ class Board(object):
             # Clean up all marbles by moving them to that players home
             self.clean_up_winning_marbles()
             self.game_over = True
+
+    def get_legal_moves_from_policy(self, legal_moves, policy):
+        # TODO need to change size of policy to  match legal moves
+        return policy[0:6] if self.player == 1 else policy[7:15]
 
     def get_legal_moves(self):
         filtered = list(map(lambda x: x[0],
@@ -107,15 +116,18 @@ class Board(object):
 
     def get_pit_to_add(self, pit_to_increment):
         pit = (pit_to_increment + 1) % 14
-        print("Pit to increment is: {}".format(pit_to_increment))
+        if self.is_printing:
+            print("Pit to increment is: {}".format(pit_to_increment))
 
         if self.enemy_home(pit):
-            print("\t\tPit is enemy home. Skip it")
+            if self.is_printing:
+                print("\t\tPit is enemy home. Skip it")
             pit += 1
             pit = pit % 14
 
-        print("Previous pit is {}, new pit is {}"
-              .format(pit_to_increment, pit))
+        if self.is_printing:
+            print("Previous pit is {}, new pit is {}"
+                  .format(pit_to_increment, pit))
 
         return pit
 
@@ -139,9 +151,11 @@ class Board(object):
         winning_player = self.current_board[6] > self.current_board[13]
         a = self.current_board[6]
         b = self.current_board[13]
-        print("Player 1: {}, Player 2: {}".format(a, b))
+        if self.is_printing:
+            print("Player 1: {}, Player 2: {}".format(a, b))
         compare = (a > b) - (a < b)
-        print("Compare to is: {}".format(compare))
+        if self.is_printing:
+            print("Compare to is: {}".format(compare))
 
         print("Winner is: {}".format(winning_player))
         return True, winning_player

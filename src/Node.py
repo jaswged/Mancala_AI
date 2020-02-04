@@ -43,8 +43,13 @@ class Node:
     def best_child(self):
         if self.action_idxes != []:
             bestmove = self.child_Q() + self.child_U()
-            bestmove = self.action_idxes[
-                np.argmax(bestmove[self.action_idxes])]
+            bestmove_action_idxes = bestmove[self.action_idxes]
+            argmax = np.argmax(bestmove[self.action_idxes])
+            a =self.action_idxes[np.argmax(bestmove[self.action_idxes])]
+            bestmove = a
+
+            #bestmove = self.action_idxes[
+            #    np.argmax(bestmove[self.action_idxes])]
         else:
             bestmove = np.argmax(self.child_Q() + self.child_U())
         return bestmove
@@ -92,13 +97,13 @@ class Node:
             self.children[move] = Node(copy_board, move, parent=self)
         return self.children[move]
 
-    # TODO this is where we have to check which player for value backup
     def backup(self, value_estimate: float):
         current = self
         while current.parent is not None:
             current.number_visits += 1
-            if current.game.player == 1:  # same as current.parent.game.player = 0
-                current.total_value += (1 * value_estimate)  # value estimate +1 = O wins
-            elif current.game.player == 0:  # same as current.parent.game.player = 1
+            if current.game.player == 1:
+                # value estimate +1 = O wins
+                current.total_value += (1 * value_estimate)
+            else:
                 current.total_value += (-1 * value_estimate)
             current = current.parent

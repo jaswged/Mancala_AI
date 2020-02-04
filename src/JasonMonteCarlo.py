@@ -92,8 +92,13 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             #                          np.random.choice(
             #                          np.array([0, 1, 2, 3,4, 5, 6]), \
             #                                       p=policy))
-            game.process_move(np.random.choice(game.get_legal_moves(),
-                                               p=policy))
+            legal_moves = game.get_legal_moves()
+            player_policy = game.get_legal_moves_from_policy(legal_moves
+                                                             , policy)
+            game.process_move(np.random.choice(legal_moves,
+                                               p=player_policy))
+
+            # game.process_move(np.random.choice(game.get_legal_moves(),p=policy))
             replay_buffer.append([state_copy, policy])
             print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
                   (iteration, cpu, ind),game.current_board, game.player)
@@ -128,22 +133,22 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 def search(game, sim_nbr, net):
     root = Node(game, move=None, parent=None)
     logger.info("Search for best action")
-    net2 = Net()
-    net3 = NeuralNet(15)
+    # net2 = Net()
+    # net3 = NeuralNet(15)
     jason = JasonNet()
 
     #from pytorch example
-    N, D_in, H, D_out = 64, 1000, 100, 10
-    x = torch.randn(N, D_in)
-    y = torch.randn(N, D_out)
-    net4 = TwoLayerNet(D_in, H, D_out)
-    criterion = torch.nn.MSELoss(reduction='sum')
-    optimizer = torch.optim.SGD(net4.parameters(), lr=1e-4)
-    y_pred = net4(x)
-    loss = criterion(y_pred, y)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+    #N, D_in, H, D_out = 64, 1000, 100, 10
+    #x = torch.randn(N, D_in)
+    #y = torch.randn(N, D_out)
+    #net4 = TwoLayerNet(D_in, H, D_out)
+    #criterion = torch.nn.MSELoss(reduction='sum')
+    #optimizer = torch.optim.SGD(net4.parameters(), lr=1e-4)
+    #y_pred = net4(x)
+    #loss = criterion(y_pred, y)
+    #optimizer.zero_grad()
+    #loss.backward()
+    #optimizer.step()
 
     #pnet = PolicyValueNet(15)
     for i in range(sim_nbr):  # number of simulations
@@ -155,18 +160,18 @@ def search(game, sim_nbr, net):
         #encoded_s = ed.encode_board(leaf.game);  # put board into 3rd dimension tensor
         #encoded_s = encoded_s.transpose(2, 0, 1)
         #encoded_s = torch.from_numpy(encoded_s).float().cuda()
-        jason_policy, jason_estimate = jason(tensor_current_board_squeezed)
-        child_priors, value_estimate = net3(tensor_current_board)
-        child_priors_numpy = child_priors.detach().cpu().numpy()
+        policy, estimate = jason(tensor_current_board_squeezed)
+        #child_priors, value_estimate = net3(tensor_current_board)
+        child_priors_numpy = policy.detach().cpu().numpy()
         #child_priors = child_priors.detach().cpu().numpy().reshape(-1)
-        value_estimate = value_estimate.item()
+        estimate = estimate.item()
 
         # Check if game over
         if leaf.game.check_winner() is True:
-            leaf.backup(value_estimate)
+            leaf.backup(estimate)
             continue
         leaf.expand(child_priors_numpy)  # need to make sure valid moves
-        leaf.backup(value_estimate)
+        leaf.backup(estimate)
     return root
 
 
