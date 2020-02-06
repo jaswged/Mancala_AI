@@ -8,9 +8,9 @@ class Node:
         self.game = game  # state s
         self.move = move  # action index
         self.has_children = False
-        self.player_turn = game.player
-        self.parent = parent
         self.children = {}
+        self.parent = parent
+        self.player_turn = game.player
         self.child_priors = np.zeros([14], dtype=np.float32)
         self.child_total_value = np.zeros([14], dtype=np.float32)
         self.child_number_visits = np.zeros([14], dtype=np.float32)
