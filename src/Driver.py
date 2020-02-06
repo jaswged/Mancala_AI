@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import logging
 import os
 from ConnectNet import ConnectNet
+from NeuralNet import JasonNet
 from JasonMonteCarlo import run_monte_carlo
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
@@ -27,7 +28,8 @@ if __name__ == "__main__":
     logger.debug("Number of episodes: {}".format(episodes))
 
     # Setup NN
-    net = ConnectNet()
+    #net = ConnectNet()
+    net = JasonNet()
     current_NN = net
     best_NN = net
 

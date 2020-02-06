@@ -135,7 +135,6 @@ def search(game, sim_nbr, net):
     logger.info("Search for best action")
     # net2 = Net()
     # net3 = NeuralNet(15)
-    jason = JasonNet()
 
     #from pytorch example
     #N, D_in, H, D_out = 64, 1000, 100, 10
@@ -151,16 +150,16 @@ def search(game, sim_nbr, net):
     #optimizer.step()
 
     #pnet = PolicyValueNet(15)
-    for i in range(sim_nbr):  # number of simulations
+    for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
-        tensor_current_board = torch.tensor(leaf.game.current_board,
+        current_board_t = torch.tensor(leaf.game.current_board,
                                             dtype=torch.float32)
         # return a new tensor with a 1 dimension added at provided index
-        tensor_current_board_squeezed = tensor_current_board.unsqueeze(0).unsqueeze(0)
+        current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
         #encoded_s = ed.encode_board(leaf.game);  # put board into 3rd dimension tensor
         #encoded_s = encoded_s.transpose(2, 0, 1)
         #encoded_s = torch.from_numpy(encoded_s).float().cuda()
-        policy, estimate = jason(tensor_current_board_squeezed)
+        policy, estimate = net(current_board_t_sqzd)
         #child_priors, value_estimate = net3(tensor_current_board)
         child_priors_numpy = policy.detach().cpu().numpy()
         #child_priors = child_priors.detach().cpu().numpy().reshape(-1)
