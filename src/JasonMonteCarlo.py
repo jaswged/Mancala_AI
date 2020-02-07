@@ -175,7 +175,8 @@ def search(game, sim_nbr, net):
 
 
 def get_policy(root, temp=1):
-    return ((root.child_number_visits) ** (1 / temp)) / sum(root.child_number_visits ** (1 / temp))
+    return ((root.child_number_visits) ** (1 / temp)) / \
+           sum(root.child_number_visits ** (1 / temp))
 
 
 def save_as_pickle(filename, data):

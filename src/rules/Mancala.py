@@ -87,7 +87,10 @@ class Board(object):
 
     def get_legal_moves_from_policy(self, legal_moves, policy):
         # TODO need to change size of policy to  match legal moves
-        return policy[0:6] if self.player == 1 else policy[7:15]
+        moves = policy[0:6] if self.player == 1 else policy[7:15]
+        asdf = lambda x: policy.contains(x)
+        asdf(0)
+        return moves
 
     def get_legal_moves(self):
         filtered = list(map(lambda x: x[0],
