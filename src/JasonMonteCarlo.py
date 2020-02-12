@@ -131,51 +131,35 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
 
 def search(game, sim_nbr, net):
+    # Create root node
     root = Node(game, move=None, parent=None)
     logger.info("Search for best action")
-    # net2 = Net()
-    # net3 = NeuralNet(15)
 
-    #from pytorch example
-    #N, D_in, H, D_out = 64, 1000, 100, 10
-    #x = torch.randn(N, D_in)
-    #y = torch.randn(N, D_out)
-    #net4 = TwoLayerNet(D_in, H, D_out)
-    #criterion = torch.nn.MSELoss(reduction='sum')
-    #optimizer = torch.optim.SGD(net4.parameters(), lr=1e-4)
-    #y_pred = net4(x)
-    #loss = criterion(y_pred, y)
-    #optimizer.zero_grad()
-    #loss.backward()
-    #optimizer.step()
-
-    #pnet = PolicyValueNet(15)
+    # for number of simulations find a leaf and evaluate the board with
+    # the neural network. if the game is one, backup the winning value
     for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
         current_board_t = torch.tensor(leaf.game.current_board,
                                             dtype=torch.float32)
         # return a new tensor with a 1 dimension added at provided index
         current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
-        #encoded_s = ed.encode_board(leaf.game);  # put board into 3rd dimension tensor
-        #encoded_s = encoded_s.transpose(2, 0, 1)
-        #encoded_s = torch.from_numpy(encoded_s).float().cuda()
-        policy, estimate = net(current_board_t_sqzd)
-        #child_priors, value_estimate = net3(tensor_current_board)
+
+        # Use neural net to predict policy and value
+        policy, estimated_val = net(current_board_t_sqzd)
         child_priors_numpy = policy.detach().cpu().numpy()
-        #child_priors = child_priors.detach().cpu().numpy().reshape(-1)
-        estimate = estimate.item()
+        estimated_val = estimated_val.item()
 
         # Check if game over
         if leaf.game.check_winner() is True:
-            leaf.backup(estimate)
+            leaf.backup(estimated_val)
             continue
         leaf.expand(child_priors_numpy)  # need to make sure valid moves
-        leaf.backup(estimate)
+        leaf.backup(estimated_val)
     return root
 
 
 def get_policy(root, temp=1):
-    return ((root.child_number_visits) ** (1 / temp)) / \
+    return (root.child_number_visits ** (1 / temp)) / \
            sum(root.child_number_visits ** (1 / temp))
 
 
