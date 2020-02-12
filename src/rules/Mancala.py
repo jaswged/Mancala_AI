@@ -28,8 +28,8 @@ class Board(object):
 
     def process_move(self, move):
         # Check that the chosen move is a legal move
-        print("Processing move {} for player {}. should be same as: {}"
-              .format(move, "1" if self.is_player_1s_turn else "2", self.player))
+        print("Processing move {} for player {}"
+              .format(move, self.player))
         if move not in self.get_legal_moves():
             # legal moves is the values of the moves not the indexes
             print("Not a valid move.")
@@ -178,7 +178,7 @@ class Board(object):
         return False
 
     def print_current_board(self):
-        print("\n\n")
+        print("\n\nPlayer {}'s turn".format(self.current_board[14]))
         print("         12:{}  11:{}  10:{}  9:{}  8:{}  7:{}".format(
                                                 self.current_board[12],
                                                 self.current_board[11],
@@ -186,8 +186,8 @@ class Board(object):
                                                 self.current_board[9],
                                                 self.current_board[8],
                                                 self.current_board[7]))
-        print("2P Home:{}                                1P Home:{}    Player {}'s turn".
-              format(self.current_board[13], self.current_board[6], self.current_board[14]))
+        print("2P Home:{}                                1P Home:{}".
+              format(self.current_board[13], self.current_board[6]))
         print("         0:{}   1:{}   2:{}   3:{}  4:{}  5:{}".format(
                                                 self.current_board[0],
                                                 self.current_board[1],
@@ -197,22 +197,27 @@ class Board(object):
                                                 self.current_board[5]))
 
     def clean_up_winning_marbles(self):
-        print("Total before {}".format(self.current_board[6]))
+        if self.is_printing:
+            print("Total before {}".format(self.current_board[6]))
         for x in range(6):
-            print("x: {}".format(x))
+            if self.is_printing:
+                print("x: {}".format(x))
             to_add = self.current_board[x]
             self.current_board[x] = 0
             self.current_board[6] += to_add
-        print("Total after {}".format(self.current_board[6]))
 
-        print("Total coins for second player")
-        print("Total before {}".format(self.current_board[13]))
+        if self.is_printing:
+            print("Total after {}".format(self.current_board[6]))
+            print("Total coins for second player")
+            print("Total before {}".format(self.current_board[13]))
+
         for x in range(7, 13):
             print("x: {}".format(x))
             to_add = self.current_board[x]
             self.current_board[x] = 0
             self.current_board[13] += to_add
-        print("Total after {}".format(self.current_board[13]))
+        if self.is_printing:
+            print("Total after {}".format(self.current_board[13]))
 
     def get_opposite_pit(self, pit):
         return self.pairs.get(pit)

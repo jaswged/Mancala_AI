@@ -1,6 +1,3 @@
-# Implementation of simple game: Tic-Tac-Toe
-# You can change this to another two-player game.
-
 import numpy as np
 
 BLACK, WHITE = 1, -1  # 先手後手
@@ -23,16 +20,6 @@ class State:
 
     def record_string(self):
         return ' '.join([self.action2str(a) for a in self.record])
-
-    def __str__(self):
-        # 表示
-        # output board.
-        s = '   ' + ' '.join(self.Y) + '\n'
-        for i in range(3):
-            s += self.X[i] + ' ' + ' '.join(
-                [self.C[self.board[i, j]] for j in range(3)]) + '\n'
-        s += 'record = ' + self.record_string()
-        return s
 
     def play(self, action):
         # state transition function
@@ -263,8 +250,7 @@ class Tree:
                     root, pv = self.nodes[
                                    state.record_string()], self.pv(
                         state)
-                    print(
-                        '%.2f sec. best %s. q = %.4f. n = %d / %d. pv = %s'
+                    print('%.2f sec. best %s. q = %.4f. n = %d / %d. pv = %s'
                         % (tmp_time, state.action2str(pv[0]),
                            root.q_sum[pv[0]] / root.n[pv[0]],
                            root.n[pv[0]], root.n_all,
