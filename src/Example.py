@@ -7,7 +7,7 @@ BLACK, WHITE = 1, -1  # 先手後手
 
 
 class State:
-    '''○×ゲームの盤面実装'''
+    """○×ゲームの盤面実装"""
     '''Board implementation of Tic-Tac-Toe'''
     X, Y = 'ABC', '123'
     C = {0: '_', BLACK: 'O', WHITE: 'X'}
@@ -16,13 +16,10 @@ class State:
         self.board = np.zeros((3, 3))  # (x, y)
         self.color = 1
         self.win_color = 0
-        self.record = []
+        self.record = []  # all moves so far
 
     def action2str(self, a):
         return self.X[a // 3] + self.Y[a % 3]
-
-    def str2action(self, s):
-        return self.X.find(s[0]) * 3 + self.Y.find(s[1])
 
     def record_string(self):
         return ' '.join([self.action2str(a) for a in self.record])
@@ -39,12 +36,7 @@ class State:
 
     def play(self, action):
         # state transition function
-        # action is position inerger (0~8) or string representation of action sequence
-        if isinstance(action, str):
-            for astr in action.split():
-                self.play(self.str2action(astr))
-            return self
-
+        # action is position integer
         x, y = action // 3, action % 3
         self.board[x, y] = self.color
 
@@ -214,12 +206,15 @@ class Tree:
 
     def search(self, state, depth):
         # 終端状態の場合は末端報酬を返す
-        # Return predicted value from new state
+        # Return predicted value from new state: because it is recursive
         if state.terminal():
             return state.terminal_reward()
 
         # まだ未到達の状態はニューラルネットを計算して推定価値を返す
+        # Get key for the current state
         key = state.record_string()
+
+        # if the current state is not in the nodes add it and return val
         if key not in self.nodes:
             p, v = self.net.predict(state)
             self.nodes[key] = Node(p, v)
@@ -233,6 +228,7 @@ class Tree:
             p = 0.75 * p + 0.25 * np.random.dirichlet([0.15] * len(p))
 
         best_action, best_ucb = None, -float('inf')
+        # For each legal action find the best choice
         for action in state.legal_actions():
             n, q_sum = 1 + node.n[action], node.q_sum_all / node.n_all + \
                        node.q_sum[action]
@@ -245,8 +241,8 @@ class Tree:
         # 一手進めて再帰で探索
         # Search next state by recursively calling this function
         state.play(best_action)
-        q_new = -self.search(state,
-                             depth + 1)  # With the assumption of changing player by turn
+        # With the assumption of changing player by turn
+        q_new = -self.search(state, depth + 1)
         node.update(best_action, q_new)
 
         return q_new

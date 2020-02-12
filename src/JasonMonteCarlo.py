@@ -12,7 +12,7 @@ from ConnectNet import ConnectNet, Net
 from NeuralNet import NeuralNet, TwoLayerNet, JasonNet
 from Node import Node
 
-logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
+logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger(__file__)
 
@@ -32,10 +32,8 @@ def run_monte_carlo(net, start_ind, iteration, episodes=100):
     if os.path.isfile(net_filename):
         checkpoint = torch.load(net_filename)
         net.load_state_dict(checkpoint)
-        #net.load_state_dictionary(checkpoint['state_dict'])
         logger.info("Loaded %s model." % net_filename)
     else:
-        #torch.save({'state_dict': net.state_dict()}, net_filename)
         torch.save(net.state_dict(), net_filename)
         logger.info("Saved initial model.")
 
@@ -77,7 +75,8 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
         while is_game_over is False and \
                 game.get_legal_moves() != []:
             #  TODO move to cinfg and add dirichlet noise
-            if move_count < 11:  # choose best policy after 11 moves.
+            # Choose best policy after 11 moves.
+            if move_count < 11:
                 t = temperature
             else:
                 t = 0.1
@@ -85,7 +84,7 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             state_copy = copy.deepcopy(game.current_board)
 
             root = search(game, 777, net)  # TODO put 777 in config
-            policy = get_policy(root, t);
+            policy = get_policy(root, t)
             print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
 
             # current_board = do_decode_n_move_pieces(current_board, \
@@ -98,7 +97,6 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             game.process_move(np.random.choice(legal_moves,
                                                p=player_policy))
 
-            # game.process_move(np.random.choice(game.get_legal_moves(),p=policy))
             replay_buffer.append([state_copy, policy])
             print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
                   (iteration, cpu, ind),game.current_board, game.player)
@@ -106,16 +104,11 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             if game.game_over() is True:  # if somebody won
                 # TODO winner is not so simple. negative for player 2
                 #  with absolute value on player 2?
-                # if game.player == 1:  # black wins
-                #     value = 1
-                # elif game.player == 2:  # white wins
-                #     value = 2
                 value = game.player
                 is_game_over = True
             move_count += 1
         dataset = []
-        # replay_buffer is [boardstate, policy]
-        # TODO debug this to see what value contains.
+        # replay_buffer is [board_state, policy]
         for idx, data in enumerate(replay_buffer):
             s, p = data
             if idx == 0:
@@ -123,11 +116,10 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             else:
                 dataset.append([s, p, value])
         del replay_buffer
-        save_as_pickle("iter_%d/" % iteration + \
+        save_as_pickle("iter_%d/" % iteration +
                        "dataset_iter%d_cpu%i_%i_%s" % (
-                       iteration, cpu, ind,
-                       datetime.datetime.today().strftime("%Y-%m-%d")),
-                       dataset)
+                           iteration, cpu, ind, datetime.datetime
+                           .today().strftime("%Y-%m-%d")), dataset)
 
 
 def search(game, sim_nbr, net):
@@ -135,12 +127,12 @@ def search(game, sim_nbr, net):
     root = Node(game, move=None, parent=None)
     logger.info("Search for best action")
 
-    # for number of simulations find a leaf and evaluate the board with
+    # For number of simulations find a leaf and evaluate the board with
     # the neural network. if the game is one, backup the winning value
     for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
         current_board_t = torch.tensor(leaf.game.current_board,
-                                            dtype=torch.float32)
+                                       dtype=torch.float32)
         # return a new tensor with a 1 dimension added at provided index
         current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
 
