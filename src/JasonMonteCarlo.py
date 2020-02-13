@@ -85,23 +85,26 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
             root = search(game, 100, net)  # TODO put 777 in config
             policy = get_policy(root, t)
+
+            # Get policy only for legal moves
+            legal_moves = game.get_legal_moves()
+            policy = game.policy_for_legal_moves(legal_moves, policy)
+
+            # Normalize the policy to solve known issue with numpy
+            policy_sum = sum(policy)
+            policy = [x / policy_sum for x in policy]
             print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
 
-            # current_board = do_decode_n_move_pieces(current_board, \
-            #                          np.random.choice(
-            #                          np.array([0, 1, 2, 3,4, 5, 6]), \
-            #                                       p=policy))
-            legal_moves = game.get_legal_moves()
-            player_policy = game.get_legal_moves_from_policy(legal_moves
-                                                             , policy)
-            game.process_move(np.random.choice(legal_moves,
-                                               p=player_policy))
+            # Pick a random choice based off of the probability policy
+            move = np.random.choice(legal_moves, p=policy)
+            game.process_move(move)
 
+            # Add game_state and choice to replay buffer to train NN
             replay_buffer.append([state_copy, policy])
             print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
-                  (iteration, cpu, ind),game.current_board, game.player)
+                  (iteration, cpu, ind), game.current_board_str())
             print(" ")
-            if game.game_over() is True:  # if somebody won
+            if game.game_over is True:  # if somebody won
                 # TODO winner is not so simple. negative for player 2
                 #  with absolute value on player 2?
                 value = game.player
