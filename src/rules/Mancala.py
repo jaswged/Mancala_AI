@@ -149,21 +149,18 @@ class Board(object):
     def is_tie(self):
         return self.current_board[6] == self.current_board[13]
 
-    # TODO Check if game is over. even if it is a tie
     def get_winner(self):
-        winning_player = self.current_board[6] > self.current_board[13]
-        a = self.current_board[6]
-        b = self.current_board[13]
+        one = self.current_board[6]
+        two = self.current_board[13]
         if self.is_printing:
-            print("Player 1: {}, Player 2: {}".format(a, b))
-        compare = (a > b) - (a < b)
+            print("Player 1: {}, Player 2: {}".format(one, two))
+        compare = (one > two) - (one < two)
+
         if self.is_printing:
-            print("Compare to is: {}".format(compare))
+            print("Winner is: {}".format(compare))
+        return compare
 
-        print("Winner is: {}".format(winning_player))
-        return True, winning_player
-
-    def check_winner(self):
+    def is_game_over(self):
         return self.game_over
 
     def marbles_gone_on_one_side(self):
@@ -217,7 +214,6 @@ class Board(object):
                                                 self.current_board[4],
                                                 self.current_board[5])
 
-
     def clean_up_winning_marbles(self):
         if self.is_printing:
             print("Total before {}".format(self.current_board[6]))
@@ -234,7 +230,8 @@ class Board(object):
             print("Total before {}".format(self.current_board[13]))
 
         for x in range(7, 13):
-            print("x: {}".format(x))
+            if self.is_printing:
+                print("x: {}".format(x))
             to_add = self.current_board[x]
             self.current_board[x] = 0
             self.current_board[13] += to_add

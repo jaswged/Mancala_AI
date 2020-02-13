@@ -68,18 +68,13 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
         game = Board()  # new game to play with
         is_game_over = False
         replay_buffer = []  # (state, policy, value) for NN training
-        value = 0  # winning player?
+        value = 0  # winning player
         move_count = 0  # number of moves so far in the game
 
         # While no winner and actions you can do
-        while is_game_over is False and \
-                game.get_legal_moves() != []:
-            #  TODO move to cinfg and add dirichlet noise
+        while is_game_over is False and game.get_legal_moves() != []:
             # Choose best policy after 11 moves.
-            if move_count < 11:
-                t = temperature
-            else:
-                t = 0.1
+            t = temperature if move_count < 11 else 0.1
 
             state_copy = copy.deepcopy(game.current_board)
 
@@ -93,7 +88,7 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             # Normalize the policy to solve known issue with numpy
             policy_sum = sum(policy)
             policy = [x / policy_sum for x in policy]
-            print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
+            #print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
 
             # Pick a random choice based off of the probability policy
             move = np.random.choice(legal_moves, p=policy)
@@ -101,13 +96,14 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
             # Add game_state and choice to replay buffer to train NN
             replay_buffer.append([state_copy, policy])
-            print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
-                  (iteration, cpu, ind), game.current_board_str())
-            print(" ")
+            #print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
+                  #(iteration, cpu, ind), game.current_board_str())
+            #print(" ")
+
             if game.game_over is True:  # if somebody won
                 # TODO winner is not so simple. negative for player 2
                 #  with absolute value on player 2?
-                value = game.player
+                value = game.get_winner()
                 is_game_over = True
             move_count += 1
         dataset = []
@@ -126,9 +122,9 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
 
 def search(game, sim_nbr, net):
+    """ Create tree to find the best policy """
     # Create root node
     root = Node(game, move=None, parent=None)
-    logger.info("Search for best action")
 
     # For number of simulations find a leaf and evaluate the board with
     # the neural network. if the game is one, backup the winning value
@@ -145,8 +141,9 @@ def search(game, sim_nbr, net):
         estimated_val = estimated_val.item()
 
         # Check if game over
-        if leaf.game.check_winner() is True:
-            leaf.backup(estimated_val)
+        if leaf.game.is_game_over() is True:
+            # If game is over, backup actual value
+            leaf.backup(leaf.game.get_winner())
             continue
         leaf.expand(policy_numpy)  # need to make sure valid moves
         leaf.backup(estimated_val)
