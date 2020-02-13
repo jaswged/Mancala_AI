@@ -83,7 +83,7 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
             state_copy = copy.deepcopy(game.current_board)
 
-            root = search(game, 777, net)  # TODO put 777 in config
+            root = search(game, 100, net)  # TODO put 777 in config
             policy = get_policy(root, t)
             print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
 
@@ -138,14 +138,14 @@ def search(game, sim_nbr, net):
 
         # Use neural net to predict policy and value
         policy, estimated_val = net(current_board_t_sqzd)
-        child_priors_numpy = policy.detach().cpu().numpy()
+        policy_numpy = policy.detach().cpu().numpy()[0]
         estimated_val = estimated_val.item()
 
         # Check if game over
         if leaf.game.check_winner() is True:
             leaf.backup(estimated_val)
             continue
-        leaf.expand(child_priors_numpy)  # need to make sure valid moves
+        leaf.expand(policy_numpy)  # need to make sure valid moves
         leaf.backup(estimated_val)
     return root
 

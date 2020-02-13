@@ -11,10 +11,10 @@ class Node:
         self.children = {}
         self.parent = parent
         self.player_turn = game.player
-        self.child_priors = np.zeros([14], dtype=np.float32)
+        self.policy = np.zeros([14], dtype=np.float32)
         self.child_total_value = np.zeros([14], dtype=np.float32)
         self.child_number_visits = np.zeros([14], dtype=np.float32)
-        self.action_idxes = []
+        self.legal_moves = []
 
     @property
     def number_visits(self):
@@ -38,18 +38,13 @@ class Node:
 
     def child_U(self):
         return math.sqrt(self.number_visits) * (
-                abs(self.child_priors) / (1 + self.child_number_visits))
+                abs(self.policy) / (1 + self.child_number_visits))
 
     def best_child(self):
-        if self.action_idxes != []:
+        if self.legal_moves != []:
             bestmove = self.child_Q() + self.child_U()
-            bestmove_action_idxes = bestmove[self.action_idxes]
-            argmax = np.argmax(bestmove[self.action_idxes])
-            a =self.action_idxes[np.argmax(bestmove[self.action_idxes])]
-            bestmove = a
-
-            #bestmove = self.action_idxes[
-            #    np.argmax(bestmove[self.action_idxes])]
+            bestmove = self.legal_moves[
+                np.argmax(bestmove[self.legal_moves])]
         else:
             bestmove = np.argmax(self.child_Q() + self.child_U())
         return bestmove
@@ -70,28 +65,29 @@ class Node:
         child_priors[action_idxs] = valid_child_priors
         return child_priors
 
-    def expand(self, child_priors):
+    def expand(self, policy):
         """Expand only nodes that result from legal moves, mask illegal
         moves and add Dirichlet noise to prior probabilities of root."""
-        action_idxs = self.game.get_legal_moves()
-        self.has_children = not action_idxs == []
-        childPriors = child_priors
+        legal_moves = self.game.get_legal_moves()
+        self.has_children = not legal_moves == []
+        child_priors = policy
 
-        self.action_idxes = action_idxs
+        self.legal_moves = legal_moves
         # mask all illegal actions
-        childPriors[[i for i in range(len(child_priors)) if
-                    i not in action_idxs]] = 0.000000000
+        child_priors[[i for i in range(len(policy)) if
+                     i not in legal_moves]] = 0.000000000
 
         # add dirichlet noise to child_priors in root node
         if self.parent is not None:
             if self.parent.parent is None:
-                childPriors = self.add_dirichlet_noise(action_idxs, childPriors)
+                child_priors = self.add_dirichlet_noise(legal_moves, child_priors)
 
-        self.child_priors = childPriors
+        self.policy = child_priors
 
     def maybe_add_child(self, move):
         if move not in self.children:
-            copy_board = copy.deepcopy(self.game)  # make copy of board
+            # make a copy of the board
+            copy_board = copy.deepcopy(self.game)
             # take the action on the copied board
             copy_board.process_move(move)
             self.children[move] = Node(copy_board, move, parent=self)
