@@ -28,8 +28,9 @@ class Board(object):
 
     def process_move(self, move):
         # Check that the chosen move is a legal move
-        print("Processing move {} for player {}"
-              .format(move, self.player))
+        if self.is_printing:
+            print("Processing move {} for player {}"
+                  .format(move, self.player))
         if move not in self.get_legal_moves():
             # legal moves is the values of the moves not the indexes
             print("Not a valid move.")
@@ -47,8 +48,9 @@ class Board(object):
             print("pit to add {}".format(pit_to_add))
         for m in range(marbles):
             pit_to_add = self.get_pit_to_add(pit_to_add)
-            print("in for loop for placing marbles. Adding to {}"
-                  .format(pit_to_add))
+            if self.is_printing:
+                print("in for loop for placing marbles. Adding to {}"
+                      .format(pit_to_add))
             self.current_board[pit_to_add] += 1  # add 1 marble to pit
 
         # Check if pit was empty, steal from opponent only on your side
