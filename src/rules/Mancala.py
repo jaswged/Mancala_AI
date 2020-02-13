@@ -87,12 +87,10 @@ class Board(object):
             self.clean_up_winning_marbles()
             self.game_over = True
 
-    def get_legal_moves_from_policy(self, legal_moves, policy):
-        # TODO need to change size of policy to  match legal moves
-        moves = policy[0:6] if self.player == 1 else policy[7:15]
-        asdf = lambda x: policy.contains(x)
-        asdf(0)
-        return moves
+    @staticmethod
+    def policy_for_legal_moves(legal_moves, policy):
+        return [policy[index] for index in legal_moves]
+
 
     def get_legal_moves(self):
         filtered = list(map(lambda x: x[0],
@@ -197,6 +195,28 @@ class Board(object):
                                                 self.current_board[3],
                                                 self.current_board[4],
                                                 self.current_board[5]))
+
+    def current_board_str(self):
+        return "Player {}'s turn" \
+            "\n         12:{}  11:{}  10:{}  9:{}  8:{}  7:{}" \
+            "\n2P Home:{}                                1P Home:{}" \
+            "\n         0:{}   1:{}   2:{}   3:{}  4:{}  5:{}".format(
+                                                self.current_board[14],
+                                                self.current_board[12],
+                                                self.current_board[11],
+                                                self.current_board[10],
+                                                self.current_board[9],
+                                                self.current_board[8],
+                                                self.current_board[7],
+                                                self.current_board[13],
+                                                self.current_board[6],
+                                                self.current_board[0],
+                                                self.current_board[1],
+                                                self.current_board[2],
+                                                self.current_board[3],
+                                                self.current_board[4],
+                                                self.current_board[5])
+
 
     def clean_up_winning_marbles(self):
         if self.is_printing:
