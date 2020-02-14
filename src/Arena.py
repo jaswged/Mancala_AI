@@ -15,13 +15,13 @@ class Arena:
         self.best_net = best_net
         self.new_net = new_net
 
-    def battle(self, episodes):
+    def battle(self, episodes, search_depth):
         logger.info("Battle the nets to the death")
         new_wins = 0
 
         for _ in range(episodes):
             with torch.no_grad():
-                winner = self.play_match()
+                winner = self.play_match(search_depth)
                 logger.debug("%s wins!" % winner)
             if winner == "new":
                 new_wins += 1
@@ -32,7 +32,7 @@ class Arena:
         else:
             return self.best_net
 
-    def play_match(self):
+    def play_match(self, search_depth):
         # Switch which net goes first randomly
         if np.random.uniform(0, 1) <= 0.5:
             first = self.new_net
@@ -51,20 +51,17 @@ class Arena:
         game_over = False
 
         while game_over is False:
-            print("game is still going")
             if game.player == 1:
-                root = search(game, 777, first)
+                root = search(game, search_depth, first)
                 policy = get_policy(root, temp)
             else:
-                root = search(game, 777, second)
+                root = search(game, search_depth, second)
                 policy = get_policy(root, temp)
 
             # Process best move
             legal_moves = game.get_legal_moves()
             policy = game.policy_for_legal_moves(legal_moves, policy)
-            policy.argmax(axis=0)
             move = np.random.choice(legal_moves, p=policy)
-            move = 0
             game.process_move(move)
 
             if game.is_game_over():

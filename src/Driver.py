@@ -21,10 +21,14 @@ if __name__ == "__main__":
                         help="Nbr of processes to run MCTS self-plays")
     parser.add_argument("--episodes", type=int, default=100,
                         help="Nbr of games to play")
+    parser.add_argument("--search_depth", type=int, default=200,
+                        help="How deep in tree to search")
     args = parser.parse_args()
 
     episodes = args.episodes
-    logger.info("Number of episodes: {}".format(episodes))
+    search_depth = args.search_depth
+    logger.debug("Number of episodes: {} and search depth {}"
+                 .format(episodes, search_depth))
 
     # Setup NN
     net = JasonNet()
@@ -40,7 +44,7 @@ if __name__ == "__main__":
     for i in range(args.iteration, args.total_iterations):
         logger.info("Iteration {}".format(i))
         # Play a number of Episodes (games) of self play
-        run_monte_carlo(current_NN, 0, i, episodes)
+        run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Fight new version against reigning champion in the Arena
         # Take new one if it wins 55% of matches
@@ -48,7 +52,7 @@ if __name__ == "__main__":
             # Battle the models to the death!
             logger.info("Cast them into the arena()")
             arena = Arena(best_NN, current_NN)
-            best_NN = arena.battle(episodes)
+            best_NN = arena.battle(episodes, search_depth)
         else:
             best_NN = current_NN
 

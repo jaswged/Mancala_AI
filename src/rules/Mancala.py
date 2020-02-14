@@ -89,8 +89,22 @@ class Board(object):
 
     @staticmethod
     def policy_for_legal_moves(legal_moves, policy):
-        return [policy[index] for index in legal_moves]
+        policy = [policy[index] for index in legal_moves]
 
+        # Normalize the policy to solve known issue with numpy
+        policy_sum = sum(policy)
+        policy = [x / policy_sum for x in policy]
+
+        return policy
+
+    @staticmethod
+    def policy_dict_for_legal_moves(legal_moves, policy):
+        p_dict = dict(enumerate(policy))
+        p_dict = {k: v for k, v in p_dict.items() if k in legal_moves}
+        policy_sum = sum(p_dict.values())
+        p_dict = {k: v / policy_sum for k, v in p_dict.items()}
+
+        return p_dict
 
     def get_legal_moves(self):
         filtered = list(map(lambda x: x[0],

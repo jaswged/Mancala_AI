@@ -17,7 +17,7 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
 logger = logging.getLogger(__file__)
 
 
-def run_monte_carlo(net, start_ind, iteration, episodes=100):
+def run_monte_carlo(net, start_ind, iteration, episodes, depth):
     if torch.cuda.is_available():
         net.cuda()
 
@@ -40,14 +40,14 @@ def run_monte_carlo(net, start_ind, iteration, episodes=100):
     # Spawn processes to self play the game
     # TODO pass this in perhaps. Does 32 currently
     processes = []
-    num_processes = 1  # mp.cpu_count()
+    num_processes = mp.cpu_count()
 
     logger.info("Spawning {} processes".format(num_processes))
     with torch.no_grad():
         for i in range(num_processes):
             p = mp.Process(target=self_play, args=(net, episodes,
                                                    start_ind, i, 1.1,
-                                                   iteration))
+                                                   iteration, depth))
             p.start()
             processes.append(p)
         for p in processes:
@@ -55,7 +55,7 @@ def run_monte_carlo(net, start_ind, iteration, episodes=100):
     logger.info("Finished multi-process MCTS!")
 
 
-def self_play(net, episodes, start_ind, cpu, temperature, iteration):
+def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
     logger.info("[CPU: %d]: Starting MCTS self-play..." % cpu)
 
     # Make directory for training iteration data to be stored
@@ -73,7 +73,7 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
         # While no winner and actions you can do
         while is_game_over is False and game.get_legal_moves() != []:
             # Choose best policy after 11 moves.
-            t = temperature if move_count < 11 else 0.1
+            t = temp if move_count < 11 else 0.1
 
             state_copy = copy.deepcopy(game.current_board)
 
@@ -87,9 +87,6 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             legal_moves = game.get_legal_moves()
             policy = game.policy_for_legal_moves(legal_moves, policy)
 
-            # Normalize the policy to solve known issue with numpy
-            policy_sum = sum(policy)
-            policy = [x / policy_sum for x in policy]
             logger.debug("[CPU: %d]: Game %d POLICY:\n " %
                          (cpu, ind), policy)
 
