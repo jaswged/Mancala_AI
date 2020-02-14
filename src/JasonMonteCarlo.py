@@ -9,7 +9,7 @@ import datetime
 import torch.multiprocessing as mp
 from rules.Mancala import Board
 from ConnectNet import ConnectNet, Net
-from NeuralNet import NeuralNet, TwoLayerNet, JasonNet
+from NeuralNet import NeuralNet, JasonNet
 from Node import Node
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
@@ -45,7 +45,9 @@ def run_monte_carlo(net, start_ind, iteration, episodes=100):
     logger.info("Spawning {} processes".format(num_processes))
     with torch.no_grad():
         for i in range(num_processes):
-            p = mp.Process(target=self_play, args=(net, episodes, start_ind, i, 1.1, iteration))
+            p = mp.Process(target=self_play, args=(net, episodes,
+                                                   start_ind, i, 1.1,
+                                                   iteration))
             p.start()
             processes.append(p)
         for p in processes:
@@ -56,11 +58,8 @@ def run_monte_carlo(net, start_ind, iteration, episodes=100):
 def self_play(net, episodes, start_ind, cpu, temperature, iteration):
     logger.info("[CPU: %d]: Starting MCTS self-play..." % cpu)
 
-    # Make directory for training iteration
-    if not os.path.isdir("./datasets/iter_%d" % iteration):
-        if not os.path.isdir("datasets"):
-            os.mkdir("datasets")
-        os.mkdir("datasets/iter_%d" % iteration)
+    # Make directory for training iteration data to be stored
+    make_training_directory(iteration)
 
     # tqdm is a progress bar
     for ind in tqdm(range(start_ind, episodes + start_ind)):
@@ -78,6 +77,9 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
             state_copy = copy.deepcopy(game.current_board)
 
+            # In each turn:
+            #  Perform a fixed # of MCTS simulations for State at t
+            #  pick move by sampling policy(state, reward) from net
             root = search(game, 100, net)  # TODO put 777 in config
             policy = get_policy(root, t)
 
@@ -88,7 +90,8 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
             # Normalize the policy to solve known issue with numpy
             policy_sum = sum(policy)
             policy = [x / policy_sum for x in policy]
-            #print("[CPU: %d]: Game %d POLICY:\n " % (cpu, ind), policy)
+            logger.debug("[CPU: %d]: Game %d POLICY:\n " %
+                         (cpu, ind), policy)
 
             # Pick a random choice based off of the probability policy
             move = np.random.choice(legal_moves, p=policy)
@@ -96,9 +99,10 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
 
             # Add game_state and choice to replay buffer to train NN
             replay_buffer.append([state_copy, policy])
-            #print("[Iteration: %d CPU: %d]: Game %d CURRENT BOARD:\n" %
-                  #(iteration, cpu, ind), game.current_board_str())
-            #print(" ")
+            logger.debug("[Iteration: %d CPU: %d]: Game %d "
+                         "CURRENT BOARD:\n" % (iteration, cpu, ind),
+                         game.current_board_str())
+            logger.debug(" ")
 
             if game.game_over is True:  # if somebody won
                 # TODO winner is not so simple. negative for player 2
@@ -106,19 +110,8 @@ def self_play(net, episodes, start_ind, cpu, temperature, iteration):
                 value = game.get_winner()
                 is_game_over = True
             move_count += 1
-        dataset = []
-        # replay_buffer is [board_state, policy]
-        for idx, data in enumerate(replay_buffer):
-            s, p = data
-            if idx == 0:
-                dataset.append([s, p, 0])
-            else:
-                dataset.append([s, p, value])
-        del replay_buffer
-        save_as_pickle("iter_%d/" % iteration +
-                       "dataset_iter%d_cpu%i_%i_%s" % (
-                           iteration, cpu, ind, datetime.datetime
-                           .today().strftime("%Y-%m-%d")), dataset)
+
+        save_neural_network(replay_buffer, value, iteration, cpu, ind)
 
 
 def search(game, sim_nbr, net):
@@ -155,6 +148,22 @@ def get_policy(root, temp=1):
            sum(root.child_number_visits ** (1 / temp))
 
 
+def save_neural_network(replay_buffer, value, itr, cpu, ind):
+    dataset = []
+    # replay_buffer is [board_state, policy]
+    for idx, data in enumerate(replay_buffer):
+        state, pol = data
+        if idx == 0:
+            dataset.append([state, pol, 0])
+        else:
+            dataset.append([state, pol, value])
+    del replay_buffer
+    save_as_pickle("iter_%d/" % itr +
+                   "dataset_iter%d_cpu%i_%i_%s.pkl" % (
+                       itr, cpu, ind, datetime.datetime
+                           .today().strftime("%Y-%m-%d")), dataset)
+
+
 def save_as_pickle(filename, data):
     complete_name = os.path.join("./datasets/", filename)
     with open(complete_name, 'wb') as output:
@@ -166,3 +175,10 @@ def load_pickle(filename):
     with open(complete_name, 'rb') as pkl_file:
         data = pickle.load(pkl_file)
     return data
+
+
+def make_training_directory(iteration):
+    if not os.path.isdir("./datasets/iter_%d" % iteration):
+        if not os.path.isdir("datasets"):
+            os.mkdir("datasets")
+        os.mkdir("datasets/iter_%d" % iteration)

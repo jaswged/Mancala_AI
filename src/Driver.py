@@ -7,7 +7,7 @@ from ConnectNet import ConnectNet
 from NeuralNet import JasonNet
 from JasonMonteCarlo import run_monte_carlo
 
-logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', \
+logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger(__file__)
 
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     episodes = args.episodes
-    logger.debug("Number of episodes: {}".format(episodes))
+    logger.info("Number of episodes: {}".format(episodes))
 
     # Setup NN
     #net = ConnectNet()
@@ -41,28 +41,18 @@ if __name__ == "__main__":
         os.mkdir("datasets")
 
     print('Begin the game.')
-    logger.info("Starting training...")
+    logger.info("Starting to train...")
 
     for i in range(args.iteration, args.total_iterations):
         logger.info("Iteration {}".format(i))
         # Play a number of Episodes (games) of self play
         run_monte_carlo(current_NN, 0, i, episodes)
 
-        # In each turn:
-        #  Perform a fixed # of MCTS simulations for State at t
-        #  pick a move by sampling policy(state, policy, reward from net
-
-        # Add game to replay buffer
-
-        # Train NN on games from replay buffer
-        # Save new version pickle
-        #train.run()
-
         # pit new version against reigning champion in the Arena
         # Take new one if it wins 55% of matches
-        if i > 1:
+        if i > 0:
             # Battle the models to the death!
-            logger.info("cast them into the arena()")
+            logger.info("Cast them into the arena()")
             arena.battle(best_NN, current_NN)
         else:
             best_NN = current_NN

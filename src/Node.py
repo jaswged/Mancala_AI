@@ -33,20 +33,22 @@ class Node:
     def total_value(self, value):
         self.parent.child_total_value[self.move] = value
 
-    def child_Q(self):
+    def child_reward_q(self):
         return self.child_total_value / (1 + self.child_number_visits)
 
-    def child_U(self):
+    def child_upper_confidence_bound(self):
         return math.sqrt(self.number_visits) * (
                 abs(self.policy) / (1 + self.child_number_visits))
 
     def best_child(self):
         if self.legal_moves != []:
-            bestmove = self.child_Q() + self.child_U()
+            bestmove = self.child_reward_q() + \
+                       self.child_upper_confidence_bound()
             bestmove = self.legal_moves[
                 np.argmax(bestmove[self.legal_moves])]
         else:
-            bestmove = np.argmax(self.child_Q() + self.child_U())
+            bestmove = np.argmax(self.child_reward_q() +
+                                 self.child_upper_confidence_bound())
         return bestmove
 
     def select_leaf(self):
@@ -78,9 +80,9 @@ class Node:
                      i not in legal_moves]] = 0.000000000
 
         # add dirichlet noise to child_priors in root node
-        if self.parent is not None:
-            if self.parent.parent is None:
-                child_priors = self.add_dirichlet_noise(legal_moves, child_priors)
+        if self.parent is not None and self.parent.parent is None:
+            child_priors = self.add_dirichlet_noise(legal_moves,
+                                                    child_priors)
 
         self.policy = child_priors
 
