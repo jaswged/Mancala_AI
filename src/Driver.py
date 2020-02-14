@@ -1,11 +1,10 @@
-from Train import Train
-from Arena import Arena
-from argparse import ArgumentParser
 import logging
 import os
-from ConnectNet import ConnectNet
-from NeuralNet import JasonNet
+from argparse import ArgumentParser
+
+from Arena import Arena
 from JasonMonteCarlo import run_monte_carlo
+from NeuralNet import JasonNet
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
@@ -28,14 +27,9 @@ if __name__ == "__main__":
     logger.info("Number of episodes: {}".format(episodes))
 
     # Setup NN
-    #net = ConnectNet()
     net = JasonNet()
     current_NN = net
     best_NN = net
-
-    # setup Train and Arena
-    #train = Train()
-    arena = Arena()
 
     if not os.path.isdir("datasets"):
         os.mkdir("datasets")
@@ -48,13 +42,14 @@ if __name__ == "__main__":
         # Play a number of Episodes (games) of self play
         run_monte_carlo(current_NN, 0, i, episodes)
 
-        # pit new version against reigning champion in the Arena
+        # Fight new version against reigning champion in the Arena
         # Take new one if it wins 55% of matches
         if i > 0:
             # Battle the models to the death!
             logger.info("Cast them into the arena()")
-            arena.battle(best_NN, current_NN)
+            arena = Arena(best_NN, current_NN)
+            best_NN = arena.battle(episodes)
         else:
             best_NN = current_NN
 
-    print("End of the main driver program.")
+    print("End of the main driver program. Training has completed!")
