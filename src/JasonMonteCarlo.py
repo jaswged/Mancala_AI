@@ -123,7 +123,7 @@ def search(game, sim_nbr, net):
 
         if torch.cuda.is_available():
             current_board_t = torch.tensor(leaf.game.current_board,
-                                       dtype=torch.cuda.float32)
+                                       dtype=torch.float)
         else:
             current_board_t = torch.tensor(leaf.game.current_board,
                                        dtype=torch.float32)
