@@ -40,7 +40,7 @@ def run_monte_carlo(net, start_ind, iteration, episodes, depth):
     # Spawn processes to self play the game
     # TODO pass this in perhaps. Does 32 currently
     processes = []
-    num_processes = mp.cpu_count()
+    num_processes = 1  # mp.cpu_count()
 
     logger.info("Spawning {} processes".format(num_processes))
     with torch.no_grad():
