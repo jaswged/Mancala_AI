@@ -120,8 +120,14 @@ def search(game, sim_nbr, net):
     # the neural network. if the game is one, backup the winning value
     for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
-        current_board_t = torch.tensor(leaf.game.current_board,
+
+        if torch.cuda.is_available():
+            current_board_t = torch.tensor(leaf.game.current_board,
+                                       dtype=torch.cuda.float32)
+        else:
+            current_board_t = torch.tensor(leaf.game.current_board,
                                        dtype=torch.float32)
+
         # return a new tensor with a 1 dimension added at provided index
         current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
 
