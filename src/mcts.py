@@ -1,9 +1,4 @@
 import numpy as np
-from utils.logging import setup_logger
-from config import RUN_FOLDER, LOGGER_DISABLED, EPSILON, ALPHA, CPUCT
-
-logger_mcts = setup_logger('logger_mcts', RUN_FOLDER + 'logs/logger_mcts.log')
-logger_mcts.disabled = LOGGER_DISABLED['mcts']
 
 
 class Node():
@@ -75,7 +70,6 @@ class MCTS():
 
             # iterate over all possible actions
             for idx, (action, edge) in enumerate(current_node.edges):
-
                 # the exploitation term is the probability of this action from the model
                 # if it is the root node, noise is added
                 exploitation_term = (1-epsilon) * edge.stats['P'] + epsilon * nu[idx]
@@ -103,8 +97,7 @@ class MCTS():
 
         # return the leaf node found, the value for the person about to play
         # (0 if game still not won, or -1 if they lost)
-        # whether the game is done
-        # and path to the leaf
+        # whether the game is done and path to the leaf
         return current_node, value, done, breadcrumbs
 
     @staticmethod

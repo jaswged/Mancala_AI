@@ -21,7 +21,7 @@ if __name__ == "__main__":
                         help="Nbr of processes to run MCTS self-plays")
     parser.add_argument("--episodes", type=int, default=100,
                         help="Nbr of games to play")
-    parser.add_argument("--search_depth", type=int, default=200,
+    parser.add_argument("--search_depth", type=int, default=100,
                         help="How deep in tree to search")
     args = parser.parse_args()
 
@@ -47,13 +47,9 @@ if __name__ == "__main__":
         run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Fight new version against reigning champion in the Arena
-        # Take new one if it wins 55% of matches
-        if i > 0:
-            # Battle the models to the death!
-            logger.info("Cast them into the arena()")
-            arena = Arena(best_NN, current_NN)
-            best_NN = arena.battle(episodes, search_depth)
-        else:
-            best_NN = current_NN
+        # Even with first iteration just battle against yourself
+        logger.info("Cast them into the arena()")
+        arena = Arena(best_NN, current_NN)
+        best_NN = arena.battle(episodes, search_depth)
 
     print("End of the main driver program. Training has completed!")

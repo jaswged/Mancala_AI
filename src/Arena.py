@@ -16,6 +16,8 @@ class Arena:
         self.new_net = new_net
 
     def battle(self, episodes, search_depth):
+        """ Battle the 2 NN against each other and
+            return the winner if they win 55% of the matches """
         logger.info("Battle the nets to the death")
         new_wins = 0
 
@@ -28,8 +30,10 @@ class Arena:
 
         winning_ratio = new_wins / episodes
         if winning_ratio >= 0.55:
+            logger.info("New neural net is better!")
             return self.new_net
         else:
+            logger.info("Reigning champion lives on!")
             return self.best_net
 
     def play_match(self, search_depth):

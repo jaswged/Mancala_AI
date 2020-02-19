@@ -8,7 +8,7 @@ def play_game(board):
     # board.switch_player()
 
     while not board.game_over:
-        board.print_board_state()
+        board.print_current_board()
 
         while True:
             try:
