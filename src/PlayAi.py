@@ -25,21 +25,12 @@ def play_match_against_ai(net, depth):
         moves_count += 1
 
         board.print_current_board()
-        if board.player == 1:
-            if net_is_player1:
-                move = process_ai_move(board, depth, net, temp)
-            else:
-                # player is first
-                move = get_move_from_player()
+        # Get move from player or ai depending on whose turn it is
+        move = process_ai_move(board, depth, net, temp) \
+            if net_is_player1 == board.player == 1 \
+            else get_move_from_player()
 
-            board.process_move(move)
-        else:
-            # Player two's turn
-            if net_is_player1:
-                move = get_move_from_player()
-            else:
-                move = process_ai_move(board, depth, net, temp)
-            board.process_move(move)
+        board.process_move(move)
 
         if board.is_game_over():
             game_over = True
