@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # TODO load this from arguments
     # TODO could this be a pickle instead?
-    best_net = "net_iter4.pth.tar"
+    best_net = "net_iter0.pth.tar"
     best_net_filename = os.path.join("./model_data/", best_net)
     net = JasonNet()
 
