@@ -11,6 +11,7 @@ class Board(object):
         self.game_over = False
         self.winner = None
         self.is_printing = False
+        self.is_debug_printing = False
         self.pairs = {0: 12, 1: 11, 2: 10,  3: 9,  4: 8,  5: 7,
                       7:  5, 8:  4, 9:  3, 10: 2, 11: 1, 12: 0}
 
@@ -39,16 +40,16 @@ class Board(object):
         # Get the marbles from the hole.
         marbles = self.current_board[move]
         self.current_board[move] = 0
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Marbles in pit {} is {}".format(move, marbles))
 
         # Place the marbles around the board. Skipping opponent home
         pit_to_add = move
-        if self.is_printing:
+        if self.is_debug_printing:
             print("pit to add {}".format(pit_to_add))
         for m in range(marbles):
             pit_to_add = self.get_pit_to_add(pit_to_add)
-            if self.is_printing:
+            if self.is_debug_printing:
                 print("in for loop for placing marbles. Adding to {}"
                       .format(pit_to_add))
             self.current_board[pit_to_add] += 1  # add 1 marble to pit
@@ -65,7 +66,8 @@ class Board(object):
             opponent_pit = self.get_opposite_pit(pit_to_add)
             amount_to_add += self.current_board[opponent_pit]
             if self.is_printing:
-                print("Steal {} marbles from opponent!".format(self.current_board[opponent_pit]))
+                print("Stole {} marbles from your opponent!"
+                      .format(self.current_board[opponent_pit]))
             self.current_board[opponent_pit] = 0
 
             # Add stolen marbles to current player's pit
@@ -133,16 +135,16 @@ class Board(object):
 
     def get_pit_to_add(self, pit_to_increment):
         pit = (pit_to_increment + 1) % 14
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Pit to increment is: {}".format(pit_to_increment))
 
         if self.enemy_home(pit):
-            if self.is_printing:
+            if self.is_debug_printing:
                 print("\t\tPit is enemy home. Skip it")
             pit += 1
             pit = pit % 14
 
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Previous pit is {}, new pit is {}"
                   .format(pit_to_increment, pit))
 
@@ -229,27 +231,27 @@ class Board(object):
                                                 self.current_board[5])
 
     def clean_up_winning_marbles(self):
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Total before {}".format(self.current_board[6]))
         for x in range(6):
-            if self.is_printing:
+            if self.is_debug_printing:
                 print("x: {}".format(x))
             to_add = self.current_board[x]
             self.current_board[x] = 0
             self.current_board[6] += to_add
 
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Total after {}".format(self.current_board[6]))
-            print("Total coins for second player")
+            print("Total marbles for second player")
             print("Total before {}".format(self.current_board[13]))
 
         for x in range(7, 13):
-            if self.is_printing:
+            if self.is_debug_printing:
                 print("x: {}".format(x))
             to_add = self.current_board[x]
             self.current_board[x] = 0
             self.current_board[13] += to_add
-        if self.is_printing:
+        if self.is_debug_printing:
             print("Total after {}".format(self.current_board[13]))
 
     def get_opposite_pit(self, pit):

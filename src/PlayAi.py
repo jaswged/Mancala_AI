@@ -60,8 +60,12 @@ def get_move_from_player():
 
 def process_ai_move(game, depth, net, temp):
     print("AI is thinking...")
+    # turn off printing for AI's thinking
+    game.is_printing = False
     root = search(game, depth, net)
     policy = get_policy(root, temp)
+    # turn printing back on
+    game.is_printing = True
 
     legal_moves = game.get_legal_moves()
     policy = game.policy_for_legal_moves(legal_moves, policy)
@@ -73,7 +77,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--iteration", type=int, default=0,
                         help="Iteration you which to play against")
-    parser.add_argument("--search_depth", type=int, default=50,
+    parser.add_argument("--search_depth", type=int, default=75,
                         help="How deep in tree to search")
     args = parser.parse_args()
 
