@@ -27,19 +27,19 @@ def play_match_against_ai(net, depth):
         board.print_current_board()
         if board.player == 1:
             if net_is_player1:
-                process_ai_move(depth, net, temp)
-
+                move = process_ai_move(board, depth, net, temp)
             else:
                 # player is first
                 move = get_move_from_player()
-                board.process_move(move)
+
+            board.process_move(move)
         else:
             # Player two's turn
             if net_is_player1:
                 move = get_move_from_player()
-                board.process_move(move)
             else:
-                process_ai_move(depth, net, temp)
+                move = process_ai_move(board, depth, net, temp)
+            board.process_move(move)
 
         if board.is_game_over():
             game_over = True
@@ -58,15 +58,15 @@ def get_move_from_player():
             print("That's not an int! Try again.")
 
 
-def process_ai_move(depth, net, temp):
+def process_ai_move(game, depth, net, temp):
     print("AI is thinking...")
-    root = search(board, depth, net)
+    root = search(game, depth, net)
     policy = get_policy(root, temp)
 
-    legal_moves = board.get_legal_moves()
-    policy = board.policy_for_legal_moves(legal_moves, policy)
+    legal_moves = game.get_legal_moves()
+    policy = game.policy_for_legal_moves(legal_moves, policy)
     move = np.random.choice(legal_moves, p=policy)
-    board.process_move(move)
+    return move
 
 
 if __name__ == "__main__":
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # TODO load this from arguments
     # TODO could this be a pickle instead?
-    best_net = "c4_current_net_trained_iter8.pth.tar"
+    best_net = "net_iter4.pth.tar"
     best_net_filename = os.path.join("./model_data/", best_net)
     net = JasonNet()
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         net.cuda()
     net.eval()
     checkpoint = torch.load(best_net_filename)
-    net.load_state_dict(checkpoint['state_dict'])
+    net.load_state_dict(checkpoint)
 
     play_again = True
     while play_again:
