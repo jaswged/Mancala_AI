@@ -1,7 +1,8 @@
 import logging
 import os
+import pickle
 from argparse import ArgumentParser
-
+from Train import train_net
 from Arena import Arena
 from JasonMonteCarlo import run_monte_carlo
 from NeuralNet import JasonNet
@@ -9,6 +10,13 @@ from NeuralNet import JasonNet
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger(__file__)
+
+
+def save_as_pickle(iteration, nn):
+    net_name = "winner_iter%d.pkl" % iteration
+    file_name = os.path.join("./model_data/", net_name)
+    with open(file_name, 'wb') as output:
+        pickle.dump(nn, output)
 
 
 if __name__ == "__main__":
@@ -21,8 +29,9 @@ if __name__ == "__main__":
                         help="Nbr of processes to run MCTS self-plays")
     parser.add_argument("--episodes", type=int, default=100,
                         help="Nbr of games to play")
-    parser.add_argument("--search_depth", type=int, default=100,
+    parser.add_argument("--search_depth", type=int, default=75,
                         help="How deep in tree to search")
+    parser.add_argument("--bs", type=int, default=32, help="Batch size")
     args = parser.parse_args()
 
     episodes = args.episodes
@@ -35,21 +44,23 @@ if __name__ == "__main__":
     current_NN = net
     best_NN = net
 
-    if not os.path.isdir("datasets"):
-        os.mkdir("datasets")
+    if not os.path.isdir("model_data"):
+        os.mkdir("model_data")
 
-    print('Begin the game.')
     logger.info("Starting to train...")
-
     for i in range(args.iteration, args.total_iterations):
         logger.info("Iteration {}".format(i))
         # Play a number of Episodes (games) of self play
         run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
+        # Train NN from dataset of monte carlo tree search above
+        train_net(current_NN, i, 0.001, args.bs)
+
         # Fight new version against reigning champion in the Arena
         # Even with first iteration just battle against yourself
         logger.info("Cast them into the arena()")
         arena = Arena(best_NN, current_NN)
-        best_NN = arena.battle(episodes, search_depth)
+        best_NN = arena.battle(episodes//2, search_depth)
+        save_as_pickle(i, best_NN)
 
     print("End of the main driver program. Training has completed!")

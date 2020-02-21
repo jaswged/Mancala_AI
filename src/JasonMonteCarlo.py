@@ -38,7 +38,6 @@ def run_monte_carlo(net, start_ind, iteration, episodes, depth):
         logger.info("Saved initial model.")
 
     # Spawn processes to self play the game
-    # TODO pass this in perhaps. Does 32 currently
     processes = []
     num_processes = 1  # mp.cpu_count()
 
@@ -161,21 +160,20 @@ def save_neural_network(replay_buffer, value, itr, cpu, ind):
         else:
             dataset.append([state, pol, value])
     del replay_buffer
-    save_as_pickle("iter_%d/" % itr +
-                   "dataset_iter%d_cpu%i_%i_%s.pkl" % (
-                       itr, cpu, ind, datetime.datetime
-                           .today().strftime("%Y-%m-%d")), dataset)
-
-
-def save_as_pickle(filename, data):
+    filename = "iter_%d/" % itr + "dataset_iter%d_cpu%i_%i_%s.pkl" % (
+                       itr, cpu, ind, datetime.datetime.today().strftime
+                       ("%Y-%m-%d"))
     complete_name = os.path.join("./datasets/", filename)
+    save_as_pickle(complete_name, dataset)
+
+
+def save_as_pickle(complete_name, data):
     with open(complete_name, 'wb') as output:
         pickle.dump(data, output)
 
 
 def load_pickle(filename):
-    complete_name = os.path.join("./datasets/", filename)
-    with open(complete_name, 'rb') as pkl_file:
+    with open(filename, 'rb') as pkl_file:
         data = pickle.load(pkl_file)
     return data
 

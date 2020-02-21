@@ -1,12 +1,27 @@
-from NeuralNet import PolicyValueNet
+from ConnectNet import BoardData
+from NeuralNet import PolicyValueNet, AlphaLoss
 from rules.Mancala import Board
 from collections import defaultdict, deque
 from MonteCarlo import MonteCarlo, MCTSPlayer, MCTSPurePlayer
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 import numpy as np
 import random
+import os
+import datetime
+import logging
+import pickle
+import torch
+import torch.optim as optim
+from torch.nn.utils import clip_grad_norm_
+from JasonMonteCarlo import load_pickle, save_as_pickle
+
+logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+logger = logging.getLogger(__file__)
 
 
-class Train:
+class Trainer:
     def __init__(self, init_model=None):
         # params of the board and the game
         self.board_size = 15
@@ -182,3 +197,124 @@ class Train:
                             self.best_win_ratio = 0.0
         except KeyboardInterrupt:
             print('\n\rquit')
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+
+def train_net(net, iter, lr, bs):
+    data_path = "./datasets/iter_%d/" % iter
+    datasets = []
+    for idx, file in enumerate(os.listdir(data_path)):
+        filename = os.path.join(data_path, file)
+        with open(filename, 'rb') as fo:
+            datasets.extend(pickle.load(fo, encoding='bytes'))
+    datasets = np.array(datasets)
+    logger.info("Loaded data from %s." % data_path)
+
+    if torch.cuda.is_available():
+        net.cuda()
+
+    optimizer = optim.Adam(net.parameters(), lr=lr, betas=(0.8, 0.999))
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=
+                                    [50, 100, 150, 200, 250, 300, 400],
+                                               gamma=0.77)
+    train(net, datasets, optimizer, scheduler, 0, iter, bs)
+
+
+def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
+    torch.manual_seed(0)
+    net.train()
+    criterion = AlphaLoss()
+    train_set = BoardData(datasets)
+    train_loader = DataLoader(train_set, batch_size=bs,
+                              shuffle=True, num_workers=0,
+                              pin_memory=False)
+    losses_per_epoch = load_results(iter + 1)
+
+    logger.info("Starting training process...")
+    update_size = len(train_loader) // 10
+    epochs = 300
+
+    for epoch in range(start_epoch, epochs):
+        total_loss = 0.0
+        losses_per_batch = []
+        for i, data in enumerate(train_loader, 0):
+            state, policy, value = data
+            state, policy, value = state.float(), policy.float(), value.float()
+            if torch.cuda.is_available():
+                state, policy, value = state.cuda(), policy.cuda(), value.cuda()
+            policy_pred, value_pred = net(state)
+            # policy_pred = torch.Size([batch, 4672]) value_pred = torch.Size([batch, 1])
+            loss = criterion(value_pred[:, 0], value, policy_pred,
+                             policy)
+            loss = loss / 1
+            loss.backward()
+            clip_grad_norm_(net.parameters(), 1.0)
+
+            optimizer.step()
+            optimizer.zero_grad()
+
+            total_loss += loss.item()
+            if i % update_size == (update_size - 1):
+                losses_per_batch.append(1 * total_loss / update_size)
+                print(
+                    '[Iteration %d] Process ID: %d [Epoch: %d, %5d/ %d points] total loss per batch: %.3f' %
+                    (iter, os.getpid(), epoch + 1,
+                     (i + 1) * bs, len(train_set),
+                     losses_per_batch[-1]))
+                print("Policy (actual, predicted):",
+                      policy[0].argmax().item(),
+                      policy_pred[0].argmax().item())
+                print("Policy data:", policy[0]);
+                print("Policy pred:", policy_pred[0])
+                print("Value (actual, predicted):", value[0].item(),
+                      value_pred[0, 0].item())
+                # print("Conv grad: %.7f" % net.conv.conv1.weight.grad.mean().item())
+                # print("Res18 grad %.7f:" % net.res_18.conv1.weight.grad.mean().item())
+                print(" ")
+                total_loss = 0.0
+
+        scheduler.step()
+        if len(losses_per_batch) >= 1:
+            losses_per_epoch.append(
+                sum(losses_per_batch) / len(losses_per_batch))
+        if (epoch % 2) == 0:
+            filename = "losses_per_epoch_iter%d.pkl" % (iter + 1)
+            complete_name = os.path.join("./model_data/", filename)
+            save_as_pickle(complete_name, losses_per_epoch)
+            torch.save({
+                'epoch': epoch + 1, \
+                'state_dict': net.state_dict(), \
+                'optimizer': optimizer.state_dict(), \
+                'scheduler': scheduler.state_dict(), \
+                }, os.path.join("./model_data/", \
+                                "net_iter%d.pth.tar" % (iter + 1)))
+    logger.info("Finished Training!")
+    fig = plt.figure()
+    ax = fig.add_subplot(222)
+    ax.scatter([e for e in range(start_epoch, (
+                len(losses_per_epoch) + start_epoch))],
+               losses_per_epoch)
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss per batch")
+    ax.set_title("Loss vs Epoch")
+    plt.savefig(os.path.join("./model_data/",
+                             "Loss_vs_Epoch_iter%d_%s.png" % (
+                             (iter + 1),
+                             datetime.datetime.today().strftime(
+                                 "%Y-%m-%d"))))
+    plt.show()
+
+
+def load_results(iteration):
+    """ Loads saved results if exists """
+    losses_path = "./model_data/losses_per_epoch_iter%d.pkl" % iteration
+    if os.path.isfile(losses_path):
+        filename = "losses_per_epoch_iter%d.pkl" % iteration
+        filename = os.path.join("./model_data/", filename)
+        losses_per_epoch = load_pickle(filename)
+        logger.info("Loaded results buffer")
+    else:
+        losses_per_epoch = []
+    return losses_per_epoch

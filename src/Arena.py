@@ -1,6 +1,7 @@
 import logging
 import torch
 import numpy as np
+from tqdm import tqdm
 from rules.Mancala import Board
 from JasonMonteCarlo import search, get_policy
 
@@ -21,7 +22,7 @@ class Arena:
         logger.info("Battle the nets to the death")
         new_wins = 0
 
-        for _ in range(episodes):
+        for _ in tqdm(range(episodes)):
             with torch.no_grad():
                 winner = self.play_match(search_depth)
                 logger.debug("%s wins!" % winner)
@@ -29,6 +30,7 @@ class Arena:
                 new_wins += 1
 
         winning_ratio = new_wins / episodes
+        logger.info("Winning ratio is: {}".format(winning_ratio))
         if winning_ratio >= 0.55:
             logger.info("New neural net is better!")
             return self.new_net

@@ -10,7 +10,7 @@ from rules.Mancala import Board
 matplotlib.use("Agg")
 
 
-class board_data(Dataset):
+class BoardData(Dataset):
     def __init__(self, dataset):  # dataset = np.array of (s, p, v)
         self.X = dataset[:, 0]
         self.y_p, self.y_v = dataset[:, 1], dataset[:, 2]
