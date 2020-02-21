@@ -123,10 +123,10 @@ def search(game, sim_nbr, net):
 
         if torch.cuda.is_available():
             current_board_t = torch.tensor(leaf.game.current_board,
-                                       dtype=torch.float)
+                                           dtype=torch.float)
         else:
             current_board_t = torch.tensor(leaf.game.current_board,
-                                       dtype=torch.float32)
+                                           dtype=torch.float32)
 
         # return a new tensor with a 1 dimension added at provided index
         current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
