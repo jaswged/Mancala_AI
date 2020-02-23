@@ -239,6 +239,11 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
     for epoch in range(start_epoch, epochs):
         total_loss = 0.0
         losses_per_batch = []
+
+        # Shuffle list then iterate through each dataset
+        for data in datasets:
+            print(data)
+
         for i, data in enumerate(train_loader, 0):
             state, policy, value = data
             # state = state.float()
