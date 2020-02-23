@@ -107,7 +107,7 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
                 is_game_over = True
             move_count += 1
 
-        save_neural_network(replay_buffer, value, iteration, cpu, ind)
+        save_game_data(replay_buffer, value, iteration, cpu, ind)
 
 
 def search(game, sim_nbr, net):
@@ -150,7 +150,7 @@ def get_policy(root, temp=1):
            sum(root.child_number_visits ** (1 / temp))
 
 
-def save_neural_network(replay_buffer, value, itr, cpu, ind):
+def save_game_data(replay_buffer, value, itr, cpu, ind):
     dataset = []
     # replay_buffer is [board_state, policy]
     for idx, data in enumerate(replay_buffer):
