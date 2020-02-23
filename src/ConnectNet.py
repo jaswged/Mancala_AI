@@ -12,15 +12,19 @@ matplotlib.use("Agg")
 
 class BoardData(Dataset):
     def __init__(self, dataset):  # dataset = np.array of (s, p, v)
-        self.X = dataset[:, 0]
-        self.y_p, self.y_v = dataset[:, 1], dataset[:, 2]
+        self.x_board_state = dataset[:, 0]
+        self.y_policy = dataset[:, 1]
+        self.y_value = dataset[:, 2]
 
     def __len__(self):
-        return len(self.X)
+        return len(self.x_board_state)
 
     def __getitem__(self, idx):
-        return np.int64(self.X[idx].transpose(2, 0, 1)), self.y_p[idx],\
-               self.y_v[idx]
+        print("Get item")
+        #return np.int64(self.x_board_states[idx].transpose(2, 0, 1)), \
+        return self.x_board_state[idx], \
+               self.y_policy[idx], \
+               self.y_value[idx]
 
 
 class ConvBlock(nn.Module):

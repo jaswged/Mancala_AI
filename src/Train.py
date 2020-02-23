@@ -241,9 +241,18 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
         losses_per_batch = []
         for i, data in enumerate(train_loader, 0):
             state, policy, value = data
-            state, policy, value = state.float(), policy.float(), value.float()
+            # state = state.float()
+            # policy = policy.float()
+            value = value.float()
+
+            current_board_t = torch.tensor(state, dtype=torch.float32)
+
             if torch.cuda.is_available():
                 state, policy, value = state.cuda(), policy.cuda(), value.cuda()
+            else:
+                current_board_t_sqzd = current_board_t.unsqueeze(
+                    0).unsqueeze(0)
+
             policy_pred, value_pred = net(state)
             # policy_pred = torch.Size([batch, 4672]) value_pred = torch.Size([batch, 1])
             loss = criterion(value_pred[:, 0], value, policy_pred,
