@@ -120,15 +120,8 @@ def search(game, sim_nbr, net):
     for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
 
-        if torch.cuda.is_available():
-            current_board_t = torch.tensor(leaf.game.current_board,
-                                           dtype=torch.float)
-        else:
-            current_board_t = torch.tensor(leaf.game.current_board,
-                                           dtype=torch.float32)
-
-        # return a new tensor with a 1 dimension added at provided index
-        current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
+        # Convert current_board array to tensor for pytorch
+        current_board_t_sqzd = board_to_tensor(leaf.game.current_board)
 
         # Use neural net to predict policy and value
         policy, estimated_val = net(current_board_t_sqzd)
@@ -143,6 +136,16 @@ def search(game, sim_nbr, net):
         leaf.expand(policy_numpy)  # need to make sure valid moves
         leaf.backup(estimated_val)
     return root
+
+
+def board_to_tensor(board):
+    if torch.cuda.is_available():
+        current_board_t = torch.tensor(board, dtype=torch.float)
+    else:
+        current_board_t = torch.tensor(board, dtype=torch.float32)
+    # return a new tensor with a 1 dimension added at provided index
+    current_board_t_sqzd = current_board_t.unsqueeze(0).unsqueeze(0)
+    return current_board_t_sqzd
 
 
 def get_policy(root, temp=1):
