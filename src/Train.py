@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+from random import shuffle
 import os
 import datetime
 import logging
@@ -14,7 +15,7 @@ import pickle
 import torch
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
-from JasonMonteCarlo import load_pickle, save_as_pickle
+from JasonMonteCarlo import load_pickle, save_as_pickle, board_to_tensor
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
@@ -240,9 +241,53 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
         total_loss = 0.0
         losses_per_batch = []
 
-        # Shuffle list then iterate through each dataset
+        shuffle(datasets)
         for data in datasets:
             print(data)
+            value = data[2]
+            policy = data[1]
+            board_t = board_to_tensor(data[0])
+
+            policy_pred, value_pred = net(board_t)
+
+            zer = np.zeros(14)
+            zer = [p for p in policy]
+
+            policy_t = torch.tensor(policy, dtype=torch.float32)
+
+            # Calculate loss. sub array may fail
+            loss = criterion(value_pred[:, 0], value, policy_pred,
+                             policy)
+
+            # TODO what is gradient_acc_steps?
+            gradient_acc_steps = 1
+            loss = loss / gradient_acc_steps
+            loss.backward()
+            clip_grad_norm_(net.parameters(), 1.0)
+
+            optimizer.step()
+            optimizer.zero_grad()
+
+            total_loss += loss.item()
+
+            if i % update_size == (update_size - 1):
+                losses_per_batch.append(1 * total_loss / update_size)
+                print(
+                    '[Iteration %d] Process ID: %d [Epoch: %d, %5d/ %d points] total loss per batch: %.3f' %
+                    (iter, os.getpid(), epoch + 1,
+                     (i + 1) * bs, len(train_set),
+                     losses_per_batch[-1]))
+                print("Policy (actual, predicted):",
+                      policy[0].argmax().item(),
+                      policy_pred[0].argmax().item())
+                print("Policy data:", policy[0]);
+                print("Policy pred:", policy_pred[0])
+                print("Value (actual, predicted):", value[0].item(),
+                      value_pred[0, 0].item())
+                # print("Conv grad: %.7f" % net.conv.conv1.weight.grad.mean().item())
+                # print("Res18 grad %.7f:" % net.res_18.conv1.weight.grad.mean().item())
+                print(" ")
+                total_loss = 0.0
 
         for i, data in enumerate(train_loader, 0):
             state, policy, value = data
@@ -288,6 +333,7 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
                 # print("Res18 grad %.7f:" % net.res_18.conv1.weight.grad.mean().item())
                 print(" ")
                 total_loss = 0.0
+        # End of for loop
 
         scheduler.step()
         if len(losses_per_batch) >= 1:

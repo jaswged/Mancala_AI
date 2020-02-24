@@ -84,13 +84,13 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
 
             # Get policy only for legal moves
             legal_moves = game.get_legal_moves()
-            policy = game.policy_for_legal_moves(legal_moves, policy)
+            legal_pol = game.policy_for_legal_moves(legal_moves, policy)
 
             logger.debug("[CPU: %d]: Game %d POLICY:\n " %
                          (cpu, ind), policy)
 
             # Pick a random choice based off of the probability policy
-            move = np.random.choice(legal_moves, p=policy)
+            move = np.random.choice(legal_moves, p=legal_pol)
             game.process_move(move)
 
             # Add game_state and choice to replay buffer to train NN
