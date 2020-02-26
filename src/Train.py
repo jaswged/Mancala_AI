@@ -235,15 +235,14 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
 
     logger.info("Starting training process...")
     update_size = len(train_loader) // 10
-    epochs = 300
+    epochs = 3  # 300
 
     for epoch in range(start_epoch, epochs):
         total_loss = 0.0
-        losses_per_batch = []
+        batch_losses = []
 
         shuffle(datasets)
         for i, data in enumerate(datasets, 1):
-            print(data)
             value = data[2]
             policy = data[1]
             board_t = board_to_tensor(data[0])
@@ -267,72 +266,17 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
             total_loss += loss.item()
 
             if i % update_size == (update_size - 1):
-                losses_per_batch.append(1 * total_loss / update_size)
-                logger.info(
-                    '[Iteration %d] Process ID: %d [Epoch: %d, %5d/ %d points] total loss per batch: %.3f' %
-                    (iter, os.getpid(), epoch + 1,
-                     (i + 1) * bs, len(train_set),
-                     losses_per_batch[-1]))
-                logger.info("Policy (actual, predicted):",
-                      policy[0].argmax().item(),
-                      policy_pred[0].argmax().item())
-                logger.info("Policy data:", policy[0]);
-                logger.info("Policy pred:", policy_pred[0])
-                logger.info("Value (actual, predicted):", value[0].item(),
-                      value_pred[0, 0].item())
-                logger.info(" ")
-                total_loss = 0.0
-
-        for i, data in enumerate(train_loader, 0):
-            state, policy, value = data
-            # state = state.float()
-            # policy = policy.float()
-            value = value.float()
-
-            current_board_t = torch.tensor(state, dtype=torch.float32)
-
-            if torch.cuda.is_available():
-                state, policy, value = state.cuda(), policy.cuda(), value.cuda()
-            else:
-                current_board_t_sqzd = current_board_t.unsqueeze(
-                    0).unsqueeze(0)
-
-            policy_pred, value_pred = net(state)
-            # policy_pred = torch.Size([batch, 4672]) value_pred = torch.Size([batch, 1])
-            loss = criterion(value_pred[:, 0], value, policy_pred,
-                             policy)
-            loss = loss / 1
-            loss.backward()
-            clip_grad_norm_(net.parameters(), 1.0)
-
-            optimizer.step()
-            optimizer.zero_grad()
-
-            total_loss += loss.item()
-            if i % update_size == (update_size - 1):
-                losses_per_batch.append(1 * total_loss / update_size)
-                print(
-                    '[Iteration %d] Process ID: %d [Epoch: %d, %5d/ %d points] total loss per batch: %.3f' %
-                    (iter, os.getpid(), epoch + 1,
-                     (i + 1) * bs, len(train_set),
-                     losses_per_batch[-1]))
-                print("Policy (actual, predicted):",
-                      policy[0].argmax().item(),
-                      policy_pred[0].argmax().item())
-                print("Policy data:", policy[0]);
-                print("Policy pred:", policy_pred[0])
-                print("Value (actual, predicted):", value[0].item(),
-                      value_pred[0, 0].item())
-                # print("Conv grad: %.7f" % net.conv.conv1.weight.grad.mean().item())
-                # print("Res18 grad %.7f:" % net.res_18.conv1.weight.grad.mean().item())
-                print(" ")
+                batch_losses.append(1 * total_loss / update_size)
+                logger.debug(f"Iteration: {iter}, Epoch: {epoch + 1}.")
+                logger.debug(f"Loss per batch: {batch_losses[-1]}")
+                logger.debug(" ")
                 total_loss = 0.0
         # End of for loop
 
         scheduler.step()
-        if len(losses_per_batch) >= 1:
+        if len(batch_losses) >= 1:
             losses_per_epoch.append(
-                sum(losses_per_batch) / len(losses_per_batch))
+                sum(batch_losses) / len(batch_losses))
         if (epoch % 2) == 0:
             filename = "losses_per_epoch_iter%d.pkl" % (iter + 1)
             complete_name = os.path.join("./model_data/", filename)
@@ -343,7 +287,7 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
                 'optimizer': optimizer.state_dict(), \
                 'scheduler': scheduler.state_dict(), \
                 }, os.path.join("./model_data/", \
-                                "net_iter%d.pth.tar" % (iter + 1)))
+                                "trn_net_iter%d.pth.tar" % (iter + 1)))
     logger.info("Finished Training!")
     fig = plt.figure()
     ax = fig.add_subplot(222)

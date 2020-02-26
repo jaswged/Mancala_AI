@@ -70,7 +70,7 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
         move_count = 0  # number of moves so far in the game
 
         # While no winner and actions you can do
-        while is_game_over is False and game.get_legal_moves() != []:
+        while is_game_over is False:
             # Choose best policy after 11 moves.
             t = temp if move_count < 11 else 0.1
 
@@ -86,8 +86,7 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
             legal_moves = game.get_legal_moves()
             legal_pol = game.policy_for_legal_moves(legal_moves, policy)
 
-            logger.debug("[CPU: %d]: Game %d POLICY:\n " %
-                         (cpu, ind), policy)
+            logger.debug(f"[CPU: {cpu}]: Game {ind} POLICY:\n {policy}")
 
             # Pick a random choice based off of the probability policy
             move = np.random.choice(legal_moves, p=legal_pol)
@@ -116,7 +115,7 @@ def search(game, sim_nbr, net):
     root = Node(game, move=None, parent=None)
 
     # For number of simulations find a leaf and evaluate the board with
-    # the neural network. if the game is one, backup the winning value
+    # the neural network. if the game is won, backup the winning value
     for _ in range(sim_nbr):  # number of simulations
         leaf = root.select_leaf()
 
