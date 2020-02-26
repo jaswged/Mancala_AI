@@ -203,7 +203,7 @@ class Trainer:
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 
-def train_net(net, iter, lr, bs):
+def train_net(net, iter, lr, bs, epochs):
     data_path = "./datasets/iter_%d/" % iter
     datasets = []
     for idx, file in enumerate(os.listdir(data_path)):
@@ -220,14 +220,15 @@ def train_net(net, iter, lr, bs):
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=
                                     [50, 100, 150, 200, 250, 300, 400],
                                                gamma=0.77)
-    train(net, datasets, optimizer, scheduler, 0, iter, bs)
+    train(net, datasets, optimizer, scheduler, iter, bs, epochs)
 
 
-def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
+def train(net, dataset, optim, scheduler, iter, bs, epochs):
     torch.manual_seed(0)
     net.train()
-    criterion = AlphaLoss()
-    train_set = BoardData(datasets)
+    loss_function = AlphaLoss()
+
+    train_set = BoardData(dataset)
     train_loader = DataLoader(train_set, batch_size=bs,
                               shuffle=True, num_workers=0,
                               pin_memory=False)
@@ -235,14 +236,29 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
 
     logger.info("Starting training process...")
     update_size = len(train_loader) // 10
-    epochs = 3  # 300
 
-    for epoch in range(start_epoch, epochs):
+    # From Torch example
+    loss_fn = torch.nn.MSELoss(reduction='sum')
+    # learning_rate = 1e-4
+    # optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    for t in range(500):
+        y_pred_p, y_pred_v = net(dataset[0][0])
+        y_act_v = dataset[0][2]
+        y_act_p = dataset[0][1]
+        loss_p = loss_fn(y_pred_p, y_act_p)
+        loss = loss_fn(y_pred_v, y_act_v)
+        if t % 100 == 99:
+            print(t, loss.item())
+            optim.zero_grad()
+            loss.backward()
+            optim.step()
+
+    for epoch in range(epochs):
         total_loss = 0.0
-        batch_losses = []
+        batch_loss = []
 
-        shuffle(datasets)
-        for i, data in enumerate(datasets, 1):
+        shuffle(dataset)
+        for i, data in enumerate(dataset, 1):
             value = data[2]
             policy = data[1]
             board_t = board_to_tensor(data[0])
@@ -251,43 +267,38 @@ def train(net, datasets, optimizer, scheduler, start_epoch, iter, bs):
             policy_t = torch.tensor(policy, dtype=torch.float32)
 
             # Calculate loss. sub array may fail
-            loss = criterion(value_pred[:, 0], value, policy_pred,
-                             policy_t)
+            loss = loss_function(value_pred[:, 0], value, policy_pred,
+                                 policy_t)
 
-            # TODO what is gradient_acc_steps?
-            gradient_acc_steps = 1
-            loss = loss / gradient_acc_steps
+            optim.zero_grad()
             loss.backward()
-            clip_grad_norm_(net.parameters(), 1.0)
-
-            optimizer.step()
-            optimizer.zero_grad()
+            # clip_grad_norm_(net.parameters(), 1.0)
+            optim.step()
 
             total_loss += loss.item()
 
             if i % update_size == (update_size - 1):
-                batch_losses.append(1 * total_loss / update_size)
+                batch_loss.append(1 * total_loss / update_size)
                 logger.debug(f"Iteration: {iter}, Epoch: {epoch + 1}.")
-                logger.debug(f"Loss per batch: {batch_losses[-1]}")
+                logger.debug(f"Loss per batch: {batch_loss[-1]}")
                 logger.debug(" ")
                 total_loss = 0.0
         # End of for loop
 
         scheduler.step()
-        if len(batch_losses) >= 1:
-            losses_per_epoch.append(
-                sum(batch_losses) / len(batch_losses))
+        if len(batch_loss) >= 1:
+            losses_per_epoch.append(sum(batch_loss) / len(batch_loss))
         if (epoch % 2) == 0:
             filename = "losses_per_epoch_iter%d.pkl" % (iter + 1)
             complete_name = os.path.join("./model_data/", filename)
             save_as_pickle(complete_name, losses_per_epoch)
-            torch.save({
-                'epoch': epoch + 1, \
-                'state_dict': net.state_dict(), \
-                'optimizer': optimizer.state_dict(), \
-                'scheduler': scheduler.state_dict(), \
-                }, os.path.join("./model_data/", \
-                                "trn_net_iter%d.pth.tar" % (iter + 1)))
+            torch.save({'epoch': epoch + 1,
+                        'state_dict': net.state_dict(),
+                        'optimizer': optim.state_dict(),
+                        'scheduler': scheduler.state_dict(), },
+                       os.path.join("./model_data/",
+                                    "trn_net_iter%d.pth.tar" %
+                                    (iter + 1)))
     logger.info("Finished Training!")
     fig = plt.figure()
     ax = fig.add_subplot(222)

@@ -7,7 +7,7 @@ from JasonMonteCarlo import search, get_policy
 from argparse import ArgumentParser
 
 
-def play_match_against_ai(net, depth):
+def play_match_against_ai(network, depth):
     net_is_player1 = np.random.uniform(0, 1) <= 0.5
     if net_is_player1:
         print("You are player 2!")
@@ -26,7 +26,7 @@ def play_match_against_ai(net, depth):
 
         game.print_current_board()
         # Get move from player or ai depending on whose turn it is
-        move = process_ai_move(game, depth, net, temp) \
+        move = process_ai_move(game, depth, network, temp) \
             if net_is_player1 == (game.player == 1) \
             else get_move_from_player()
 
@@ -73,8 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # TODO load this from arguments
-    # TODO could this be a pickle instead?
-    best_net = "net_iter0.pth.tar"
+    best_net = "net_iter9.pth.tar"
     best_net_filename = os.path.join("./model_data/", best_net)
     net = JasonNet()
 
