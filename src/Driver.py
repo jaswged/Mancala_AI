@@ -32,6 +32,11 @@ if __name__ == "__main__":
     parser.add_argument("--search_depth", type=int, default=75,
                         help="How deep in tree to search")
     parser.add_argument("--bs", type=int, default=32, help="Batch size")
+    parser.add_argument("--lr", type=int, default=1e-4,
+                        help="Learning Rate")
+    parser.add_argument("--epochs", type=int, default=300,
+                        help="Number of epochs to train")
+
     args = parser.parse_args()
 
     episodes = args.episodes
@@ -54,7 +59,7 @@ if __name__ == "__main__":
         run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Train NN from dataset of monte carlo tree search above
-        train_net(current_NN, i, 0.001, args.bs)
+        train_net(current_NN, i, args.lr, args.bs, args.epochs)
 
         # Fight new version against reigning champion in the Arena
         # Even with first iteration just battle against yourself
