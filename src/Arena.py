@@ -19,7 +19,7 @@ class Arena:
     def battle(self, episodes, search_depth):
         """ Battle the 2 NN against each other and
             return the winner if they win 55% of the matches """
-        logger.info("Battle the nets to the death")
+        logger.info("Battle the nets to the death in the Arena")
         new_wins = 0
 
         for _ in tqdm(range(episodes)):

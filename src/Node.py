@@ -96,12 +96,12 @@ class Node:
         return self.children[move]
 
     def backup(self, value_estimate: float, current_player):
-        current = self
-        while current.parent is not None:
-            current.number_visits += 1
-            if current.game.player == current_player:
+        leaf = self
+        while leaf.parent is not None:
+            leaf.number_visits += 1
+            if leaf.game.player == current_player:
                 # value estimate +1 = O wins
-                current.total_value += (1 * value_estimate)
+                leaf.total_value += (1 * value_estimate)
             else:
-                current.total_value += (-1 * value_estimate)
-            current = current.parent
+                leaf.total_value += (-1 * value_estimate)
+            leaf = leaf.parent

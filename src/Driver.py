@@ -63,9 +63,9 @@ if __name__ == "__main__":
 
         # Fight new version against reigning champion in the Arena
         # Even with first iteration just battle against yourself
-        logger.info("Cast them into the arena()")
         arena = Arena(best_NN, current_NN)
         best_NN = arena.battle(episodes//2, search_depth)
+        # Save the winning net as a Pickle for battle later
         save_as_pickle(i, best_NN)
 
     print("End of the main driver program. Training has completed!")
