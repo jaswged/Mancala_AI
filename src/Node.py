@@ -33,22 +33,22 @@ class Node:
     def total_value(self, value):
         self.parent.child_total_value[self.move] = value
 
-    def child_reward_q(self):
+    def reward_q(self):
         return self.child_total_value / (1 + self.child_number_visits)
 
-    def child_upper_confidence_bound(self):
+    def upper_confidence_bound(self):
         return math.sqrt(self.number_visits) * (
                 abs(self.policy) / (1 + self.child_number_visits))
 
     def best_child(self):
-        if self.legal_moves != []:
-            bestmove = self.child_reward_q() + \
-                       self.child_upper_confidence_bound()
+        if self.legal_moves:
+            bestmove = self.reward_q() + \
+                       self.upper_confidence_bound()
             bestmove = self.legal_moves[
                 np.argmax(bestmove[self.legal_moves])]
         else:
-            bestmove = np.argmax(self.child_reward_q() +
-                                 self.child_upper_confidence_bound())
+            bestmove = np.argmax(self.reward_q() +
+                                 self.upper_confidence_bound())
         return bestmove
 
     def select_leaf(self):
@@ -95,11 +95,11 @@ class Node:
             self.children[move] = Node(copy_board, move, parent=self)
         return self.children[move]
 
-    def backup(self, value_estimate: float):
+    def backup(self, value_estimate: float, current_player):
         current = self
         while current.parent is not None:
             current.number_visits += 1
-            if current.game.player == 1:
+            if current.game.player == current_player:
                 # value estimate +1 = O wins
                 current.total_value += (1 * value_estimate)
             else:

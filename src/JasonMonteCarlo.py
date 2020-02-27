@@ -133,7 +133,7 @@ def search(game, sim_nbr, net):
             leaf.backup(leaf.game.get_winner())
             continue
         leaf.expand(policy_numpy)  # need to make sure valid moves
-        leaf.backup(estimated_val)
+        leaf.backup(estimated_val, game.player)
     return root
 
 
