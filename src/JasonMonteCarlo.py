@@ -130,7 +130,7 @@ def search(game, sim_nbr, net):
         # Check if game over
         if leaf.game.is_game_over() is True:
             # If game is over, backup actual value
-            leaf.backup(leaf.game.get_winner())
+            leaf.backup(leaf.game.get_winner(), game.player)
             continue
         leaf.expand(policy_numpy)  # need to make sure valid moves
         leaf.backup(estimated_val, game.player)

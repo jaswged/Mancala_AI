@@ -237,22 +237,6 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     logger.info("Starting training process...")
     update_size = len(train_loader) // 10
 
-    # From Torch example
-    loss_fn = torch.nn.MSELoss(reduction='sum')
-    # learning_rate = 1e-4
-    # optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    for t in range(500):
-        y_pred_p, y_pred_v = net(dataset[0][0])
-        y_act_v = dataset[0][2]
-        y_act_p = dataset[0][1]
-        loss_p = loss_fn(y_pred_p, y_act_p)
-        loss = loss_fn(y_pred_v, y_act_v)
-        if t % 100 == 99:
-            print(t, loss.item())
-            optim.zero_grad()
-            loss.backward()
-            optim.step()
-
     for epoch in range(epochs):
         total_loss = 0.0
         batch_loss = []
@@ -302,8 +286,7 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     logger.info("Finished Training!")
     fig = plt.figure()
     ax = fig.add_subplot(222)
-    ax.scatter([e for e in range(start_epoch, (
-                len(losses_per_epoch) + start_epoch))],
+    ax.scatter([e for e in range(len(losses_per_epoch))],
                losses_per_epoch)
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss per batch")
