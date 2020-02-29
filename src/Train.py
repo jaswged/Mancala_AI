@@ -13,8 +13,8 @@ import datetime
 import logging
 import pickle
 import torch
+from tqdm import tqdm
 import torch.optim as optim
-from torch.nn.utils import clip_grad_norm_
 from JasonMonteCarlo import load_pickle, save_as_pickle, board_to_tensor
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
@@ -237,7 +237,8 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     logger.info("Starting training process...")
     update_size = len(train_loader) // 10
 
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
+        logger.info(F"Training Epoch{epoch}")
         total_loss = 0.0
         batch_loss = []
 
@@ -249,9 +250,10 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
 
             policy_pred, value_pred = net(board_t)
             policy_t = torch.tensor(policy, dtype=torch.float32)
+            value_t = torch.tensor(value, dtype=torch.float32)
 
             # Calculate loss. sub array may fail
-            loss = loss_function(value_pred[:, 0], value, policy_pred,
+            loss = loss_function(value_pred[:, 0], value_t, policy_pred,
                                  policy_t)
 
             optim.zero_grad()

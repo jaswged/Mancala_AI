@@ -193,14 +193,15 @@ class JasonNet(torch.nn.Module):
 
         # action policy layers
         x_act = torch.relu(self.act_conv1(x))
-        x_act = torch.log_softmax(input=self.act_fc1(x_act.view(-1, 52))
-                                  ,dim=1)
+        x_act = torch.relu(self.act_fc1(x_act.view(-1, 52)))
+        x_act = torch.log_softmax(x_act, dim=1).exp()
+        #x_act = torch.log_softmax(input=self.act_fc1(x_act.view(-1, 52))
+         #                         ,dim=1)
+
         # state value layers
         x_val = torch.relu(self.val_conv1(x))
         x_val = x_val.view(-1, 2*self.board_size - 2)
         x_val = torch.relu(self.val_fc1(x_val))
-        # UserWarning: nn.functional.tanh is deprecated.
-        # Use torch.tanh instead.
         x_val = torch.tanh(self.val_fc2(x_val))
         return x_act, x_val
 
@@ -208,11 +209,14 @@ class JasonNet(torch.nn.Module):
 class AlphaLoss(torch.nn.Module):
     def __init__(self):
         super(AlphaLoss, self).__init__()
+        self.mse_loss_fn = torch.nn.MSELoss(reduction='sum')
 
     def forward(self, y_value, value, y_policy, policy):
+        # Does the below line still throw a warning?
+        value_error = self.mse_loss_fn(y_value[0], value)
+
         # sum of mean-squared error value and cross-entropy policy loss
-        value_error = (value - y_value) ** 2
-        policy_error = torch.sum((-policy * (1e-8 + y_policy.float())
-                                  .float().log()), 1)
+        policy_error = torch.sum((-policy * (1e-8 + y_policy).log()), 1)
         ttl_error = (value_error.view(-1).float() + policy_error).mean()
+
         return ttl_error
