@@ -11,7 +11,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from ConnectNet import BoardData
+from NeuralNet import BoardData
 from MonteCarlo import load_pickle, save_as_pickle, board_to_tensor
 from NeuralNet import AlphaLoss
 
