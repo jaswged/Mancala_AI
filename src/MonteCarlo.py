@@ -60,6 +60,7 @@ def self_play(net, episodes, start_ind, core, temp, iteration, depth):
 
     # tqdm is a progress bar
     for ind in tqdm(range(start_ind, episodes + start_ind)):
+        logger.info("[Core: %d]: Game %d" % (core, ind))
         game = Board()  # new game to play with
         is_game_over = False
         replay_buffer = []  # (state, policy, value) for NN training

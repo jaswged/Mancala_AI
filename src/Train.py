@@ -56,7 +56,6 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     update_size = len(train_loader) // 10
 
     for epoch in tqdm(range(epochs)):
-        logger.info(F"Training Epoch: {epoch}")
         total_loss = 0.0
         batch_loss = []
 
@@ -69,6 +68,7 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
             policy_pred, value_pred = net(board_t)
             policy_t = torch.tensor(policy, dtype=torch.float32)
             value_t = torch.tensor(value, dtype=torch.float32)
+
             # Set cuda on if using a gpu to avoid ASSERT FAILED error.
             if torch.cuda.is_available():
                 value_t = value_t.cuda()
