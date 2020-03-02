@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 from rules.Mancala import Board
-from JasonMonteCarlo import search, get_policy
+from MonteCarlo import search, get_policy
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)

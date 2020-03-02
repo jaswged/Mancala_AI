@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from ConnectNet import BoardData
-from JasonMonteCarlo import load_pickle, save_as_pickle, board_to_tensor
+from MonteCarlo import load_pickle, save_as_pickle, board_to_tensor
 from NeuralNet import AlphaLoss
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',

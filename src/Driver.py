@@ -4,7 +4,7 @@ import pickle
 from argparse import ArgumentParser
 from Train import train_net
 from Arena import Arena
-from JasonMonteCarlo import run_monte_carlo
+from MonteCarlo import run_monte_carlo
 from NeuralNet import JasonNet
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',

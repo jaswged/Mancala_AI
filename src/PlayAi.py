@@ -3,7 +3,7 @@ import os
 import numpy as np
 from NeuralNet import JasonNet
 from rules.Mancala import Board
-from JasonMonteCarlo import search, get_policy
+from MonteCarlo import search, get_policy
 from argparse import ArgumentParser
 
 
