@@ -39,9 +39,9 @@ def run_monte_carlo(net, start_ind, iteration, episodes, depth):
 
     # Spawn processes to self play the game
     processes = []
-    num_processes = 1  # mp.cpu_count()
+    num_processes = mp.cpu_count()
 
-    logger.info("Spawning {} processes".format(num_processes))
+    logger.info(F"Spawning {num_processes} processes")
     with torch.no_grad():
         for i in range(num_processes):
             p = mp.Process(target=self_play, args=(net, episodes,
@@ -54,15 +54,15 @@ def run_monte_carlo(net, start_ind, iteration, episodes, depth):
     logger.info("Finished multi-process MCTS!")
 
 
-def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
-    logger.info("[CPU: %d]: Starting MCTS self-play..." % cpu)
+def self_play(net, episodes, start_ind, core, temp, iteration, depth):
+    logger.info("[Core: %d]: Starting MCTS self-play..." % core)
 
     # Make directory for training iteration data to be stored
     make_training_directory(iteration)
 
     # tqdm is a progress bar
     for ind in tqdm(range(start_ind, episodes + start_ind)):
-        logger.info("[CPU: %d]: Game %d" % (cpu, ind))
+        logger.info("[Core: %d]: Game %d" % (core, ind))
         game = Board()  # new game to play with
         is_game_over = False
         replay_buffer = []  # (state, policy, value) for NN training
@@ -86,7 +86,7 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
             legal_moves = game.get_legal_moves()
             legal_pol = game.policy_for_legal_moves(legal_moves, policy)
 
-            logger.debug(f"[CPU: {cpu}]: Game {ind} POLICY:\n {policy}")
+            logger.debug(f"[Core: {core}]: Game {ind} POLICY:\n {policy}")
 
             # Pick a random choice based off of the probability policy
             move = np.random.choice(legal_moves, p=legal_pol)
@@ -94,8 +94,8 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
 
             # Add game_state and choice to replay buffer to train NN
             replay_buffer.append([state_copy, policy])
-            logger.debug("[Iteration: %d CPU: %d]: Game %d "
-                         "CURRENT BOARD:\n" % (iteration, cpu, ind),
+            logger.debug("[Iteration: %d Core: %d]: Game %d "
+                         "CURRENT BOARD:\n" % (iteration, core, ind),
                          game.current_board_str())
             logger.debug(" ")
 
@@ -106,7 +106,7 @@ def self_play(net, episodes, start_ind, cpu, temp, iteration, depth):
                 is_game_over = True
             move_count += 1
 
-        save_game_data(replay_buffer, value, iteration, cpu, ind)
+        save_game_data(replay_buffer, value, iteration, core, ind)
 
 
 def search(game, sim_nbr, net):
@@ -139,7 +139,7 @@ def search(game, sim_nbr, net):
 
 def board_to_tensor(board):
     if torch.cuda.is_available():
-        current_board_t = torch.tensor(board, dtype=torch.float)
+        current_board_t = torch.tensor(board, dtype=torch.float).cuda()
     else:
         current_board_t = torch.tensor(board, dtype=torch.float32)
     # return a new tensor with a 1 dimension added at provided index
@@ -152,7 +152,7 @@ def get_policy(root, temp=1):
            sum(root.child_number_visits ** (1 / temp))
 
 
-def save_game_data(replay_buffer, value, itr, cpu, ind):
+def save_game_data(replay_buffer, value, itr, core, ind):
     dataset = []
     # replay_buffer is [board_state, policy]
     for idx, data in enumerate(replay_buffer):
@@ -162,8 +162,8 @@ def save_game_data(replay_buffer, value, itr, cpu, ind):
         else:
             dataset.append([state, pol, value])
     del replay_buffer
-    filename = "iter_%d/" % itr + "dataset_iter%d_cpu%i_%i_%s.pkl" % (
-                       itr, cpu, ind, datetime.datetime.today().strftime
+    filename = "iter_%d/" % itr + "dataset_iter%d_core%i_%i_%s.pkl" % (
+        itr, core, ind, datetime.datetime.today().strftime
                        ("%Y-%m-%d"))
     complete_name = os.path.join("./datasets/", filename)
     save_as_pickle(complete_name, dataset)

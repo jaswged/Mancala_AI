@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser.add_argument("--bs", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=int, default=1e-4,
                         help="Learning Rate")
-    parser.add_argument("--epochs", type=int, default=300,
+    parser.add_argument("--epochs", type=int, default=25,
                         help="Number of epochs to train")
 
     args = parser.parse_args()
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     logger.info("Starting to train...")
     for i in range(args.iteration, args.total_iterations):
-        logger.info("Iteration {}".format(i))
+        logger.info(F"Iteration {i}")
         # Play a number of Episodes (games) of self play
         run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
