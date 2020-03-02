@@ -2,9 +2,6 @@ class Board(object):
     def __init__(self):
         self.is_player_1s_turn = True
         self.player = 1
-        # self.board_state = [0,1,2,3,4,5, 0, 7,8,9,10,11,12, 0, 1]
-        # self.board_state = [2, 3, 1, 0, 9, 0, 20, 1, 1, 0, 2, 8, 3, 4, 1]
-        # self.board_state = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1]
         self.current_board = self.initial_board()
         self.player_1_pit = 6
         self.player_2_pit = 13
@@ -47,7 +44,7 @@ class Board(object):
         pit_to_add = move
         if self.is_debug_printing:
             print("pit to add {}".format(pit_to_add))
-        for m in range(marbles):
+        for _ in range(marbles):
             pit_to_add = self.get_pit_to_add(pit_to_add)
             if self.is_debug_printing:
                 print("in for loop for placing marbles. Adding to {}"

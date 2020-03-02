@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 
 
 class BoardData(Dataset):
-    def __init__(self, dataset):  # dataset = np.array of (s, p, v)
+    def __init__(self, dataset):  # dataset is np.array of (s, p, v)
         self.x_board_state = dataset[:, 0]
         self.y_policy = dataset[:, 1]
         self.y_value = dataset[:, 2]
@@ -13,8 +13,6 @@ class BoardData(Dataset):
         return len(self.x_board_state)
 
     def __getitem__(self, idx):
-        print("Get item")
-        #return np.int64(self.x_board_states[idx].transpose(2, 0, 1)), \
         return self.x_board_state[idx], \
                self.y_policy[idx], \
                self.y_value[idx]
@@ -50,8 +48,6 @@ class JasonNet(torch.nn.Module):
         x_act = torch.relu(self.act_conv1(x))
         x_act = torch.relu(self.act_fc1(x_act.view(-1, 52)))
         x_act = torch.log_softmax(x_act, dim=1).exp()
-        #x_act = torch.log_softmax(input=self.act_fc1(x_act.view(-1, 52))
-         #                         ,dim=1)
 
         # state value layers
         x_val = torch.relu(self.val_conv1(x))

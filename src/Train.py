@@ -18,6 +18,7 @@ from NeuralNet import AlphaLoss
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 logger = logging.getLogger(__file__)
+MODEL_DATA = "./model_data/"
 
 
 def train_net(net, iter, lr, bs, epochs):
@@ -97,13 +98,13 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
             losses_per_epoch.append(sum(batch_loss) / len(batch_loss))
         if (epoch % 2) == 0:
             filename = "losses_per_epoch_iter%d.pkl" % (iter + 1)
-            complete_name = os.path.join("./model_data/", filename)
+            complete_name = os.path.join(MODEL_DATA, filename)
             save_as_pickle(complete_name, losses_per_epoch)
             torch.save({'epoch': epoch + 1,
                         'state_dict': net.state_dict(),
                         'optimizer': optim.state_dict(),
                         'scheduler': scheduler.state_dict(), },
-                       os.path.join("./model_data/",
+                       os.path.join(MODEL_DATA,
                                     "trn_net_iter%d.pth.tar" %
                                     (iter + 1)))
     logger.info("Finished Training!")
@@ -114,7 +115,7 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss per batch")
     ax.set_title("Loss vs Epoch")
-    plt.savefig(os.path.join("./model_data/",
+    plt.savefig(os.path.join(MODEL_DATA,
                              "Loss_vs_Epoch_iter%d_%s.png" % (
                              (iter + 1),
                              datetime.datetime.today().strftime(
@@ -127,7 +128,7 @@ def load_results(iteration):
     losses_path = "./model_data/losses_per_epoch_iter%d.pkl" % iteration
     if os.path.isfile(losses_path):
         filename = "losses_per_epoch_iter%d.pkl" % iteration
-        filename = os.path.join("./model_data/", filename)
+        filename = os.path.join(MODEL_DATA, filename)
         losses_per_epoch = load_pickle(filename)
         logger.info("Loaded results buffer")
     else:
