@@ -98,8 +98,6 @@ def self_play(net, episodes, start_ind, core, temp, iteration, depth):
             logger.debug(" ")
 
             if game.game_over is True:  # if somebody won
-                # TODO winner is not so simple. negative for player 2
-                #  with absolute value on player 2?
                 value = game.get_winner()
                 is_game_over = True
             move_count += 1

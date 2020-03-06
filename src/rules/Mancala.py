@@ -244,8 +244,6 @@ class Board(object):
         return own_pit
 
     def steal_marbles(self, pit_to_add):
-        self.current_board[pit_to_add] = 0
-
         # Check the opposing side pit when zero
         opponent_pit = self.get_opposite_pit(pit_to_add)
         opponent_amount = self.current_board[opponent_pit]
@@ -253,6 +251,7 @@ class Board(object):
             return
 
         amount_to_add = 1
+        self.current_board[pit_to_add] = 0
         amount_to_add += self.current_board[opponent_pit]
         if self.is_printing:
             print("Pit was empty. Steal the opponent marbles")
