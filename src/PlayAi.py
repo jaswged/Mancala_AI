@@ -66,14 +66,13 @@ def process_ai_move(game, depth, net, temp):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--iteration", type=int, default=0,
-                        help="Iteration you which to play against")
-    parser.add_argument("--search_depth", type=int, default=75,
+    parser.add_argument("--model", default='net_iter0.pth.tar',
+                        help="Model pickle you which to play against")
+    parser.add_argument("--search_depth", type=int, default=40,
                         help="How deep in tree to search")
     args = parser.parse_args()
 
-    # TODO load this from arguments
-    best_net = "net_iter9.pth.tar"
+    best_net = args.model
     best_net_filename = os.path.join("./model_data/", best_net)
     net = JasonNet()
 

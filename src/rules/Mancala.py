@@ -54,23 +54,7 @@ class Board(object):
         # Check if pit was empty, steal from opponent only on your side
         if self.current_board[pit_to_add] == 1 \
                 and self.own_side_pit(pit_to_add):
-            if self.is_printing:
-                print("Pit was empty. Steal the opponent marbles")
-            self.current_board[pit_to_add] = 0
-            amount_to_add = 1
-
-            # Get the opposing side pit when zero
-            opponent_pit = self.get_opposite_pit(pit_to_add)
-            amount_to_add += self.current_board[opponent_pit]
-            if self.is_printing:
-                print("Stole {} marbles from your opponent!"
-                      .format(self.current_board[opponent_pit]))
-            self.current_board[opponent_pit] = 0
-
-            # Add stolen marbles to current player's pit
-            own_home = self.player_1_pit if self.is_player_1s_turn \
-                else self.player_2_pit
-            self.current_board[own_home] += amount_to_add
+            self.steal_marbles(pit_to_add)
 
         # if pit_to_add is own home. then free turn else switch players
         if not self.own_home(pit_to_add):
@@ -258,3 +242,25 @@ class Board(object):
         own_pit = pit_to_add < 6 if self.is_player_1s_turn \
             else 6 < pit_to_add < 13
         return own_pit
+
+    def steal_marbles(self, pit_to_add):
+        self.current_board[pit_to_add] = 0
+
+        # Check the opposing side pit when zero
+        opponent_pit = self.get_opposite_pit(pit_to_add)
+        opponent_amount = self.current_board[opponent_pit]
+        if opponent_amount == 0:
+            return
+
+        amount_to_add = 1
+        amount_to_add += self.current_board[opponent_pit]
+        if self.is_printing:
+            print("Pit was empty. Steal the opponent marbles")
+            print("Stole {} marbles from your opponent!"
+                  .format(self.current_board[opponent_pit]))
+        self.current_board[opponent_pit] = 0
+
+        # Add stolen marbles to current player's pit
+        own_home = self.player_1_pit if self.is_player_1s_turn \
+            else self.player_2_pit
+        self.current_board[own_home] += amount_to_add
