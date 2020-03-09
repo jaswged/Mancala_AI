@@ -27,7 +27,7 @@ if __name__ == "__main__":
                         help="Total number of iterations to run")
     parser.add_argument("--MCTS_num_processes", type=int, default=5,
                         help="Nbr of processes to run MCTS self-plays")
-    parser.add_argument("--episodes", type=int, default=100,
+    parser.add_argument("--episodes", type=int, default=150,
                         help="Nbr of games to play")
     parser.add_argument("--search_depth", type=int, default=75,
                         help="How deep in tree to search")
