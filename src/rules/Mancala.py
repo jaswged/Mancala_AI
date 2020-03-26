@@ -25,6 +25,8 @@ class Board(object):
         return [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0, 1]
 
     def process_move(self, move):
+        switch_player = True
+
         # Check that the chosen move is a legal move
         if self.is_printing:
             print("Processing move {} for player {}"
@@ -58,17 +60,18 @@ class Board(object):
 
         # if pit_to_add is own home. then free turn else switch players
         if not self.own_home(pit_to_add):
-            self.switch_player()
+            switch_player = False
 
         # Check for the win conditions.
         if self.current_board[self.player_1_pit] > 24 or \
-                self.current_board[self.player_2_pit] > 24:
-            self.game_over = True
-
-        if self.marbles_gone_on_one_side():
-            # Clean up all marbles by moving them to that players home
+                self.current_board[self.player_2_pit] > 24 or \
+                self.marbles_gone_on_one_side():
             self.clean_up_winning_marbles()
             self.game_over = True
+            switch_player = False
+
+        if switch_player:
+            self.switch_player()
 
     @staticmethod
     def policy_for_legal_moves(legal_moves, policy):
