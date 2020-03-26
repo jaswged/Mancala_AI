@@ -72,19 +72,19 @@ class Node:
         moves and add Dirichlet noise to prior probabilities of root."""
         legal_moves = self.game.get_legal_moves()
         self.has_children = not legal_moves == []
-        child_priors = policy
+        new_policy = policy
 
         self.legal_moves = legal_moves
         # mask all illegal actions
-        child_priors[[i for i in range(len(policy)) if
-                     i not in legal_moves]] = 0.000000000
+        new_policy[[i for i in range(len(policy)) if
+                    i not in legal_moves]] = 0.000000000
 
         # add dirichlet noise to child_priors in root node
         if self.parent is not None and self.parent.parent is None:
-            child_priors = self.add_dirichlet_noise(legal_moves,
-                                                    child_priors)
+            new_policy = self.add_dirichlet_noise(legal_moves,
+                                                  new_policy)
 
-        self.policy = child_priors
+        self.policy = new_policy
 
     def maybe_add_child(self, move):
         if move not in self.children:
@@ -95,13 +95,10 @@ class Node:
             self.children[move] = Node(copy_board, move, parent=self)
         return self.children[move]
 
-    def backup(self, value_estimate: float, current_player):
+    def backup(self, value_estimate: float):
+        # value_estimate is winner or val estimate from neural ne
         leaf = self
         while leaf.parent is not None:
             leaf.number_visits += 1
-            if leaf.game.player == current_player:
-                # value estimate +1 = O wins
-                leaf.total_value += (1 * value_estimate)
-            else:
-                leaf.total_value += (-1 * value_estimate)
+            leaf.total_value += value_estimate
             leaf = leaf.parent

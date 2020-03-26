@@ -29,7 +29,7 @@ if __name__ == "__main__":
                         help="Nbr of processes to run MCTS self-plays")
     parser.add_argument("--episodes", type=int, default=150,
                         help="Nbr of games to play")
-    parser.add_argument("--search_depth", type=int, default=75,
+    parser.add_argument("--search_depth", type=int, default=300,
                         help="How deep in tree to search")
     parser.add_argument("--bs", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=int, default=1e-4,

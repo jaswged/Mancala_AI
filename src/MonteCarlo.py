@@ -37,7 +37,7 @@ def run_monte_carlo(net, start_ind, iteration, episodes, depth):
 
     # Spawn processes to self play the game
     processes = []
-    num_processes = mp.cpu_count()
+    num_processes = 1 # mp.cpu_count()
 
     logger.info(F"Spawning {num_processes} processes")
     with torch.no_grad():
@@ -119,17 +119,18 @@ def search(game, sim_nbr, net):
         current_board_t_sqzd = board_to_tensor(leaf.game.current_board)
 
         # Use neural net to predict policy and value
-        policy, estimated_val = net(current_board_t_sqzd)
-        policy_numpy = policy.detach().cpu().numpy()[0]
+        estimated_policy, estimated_val = net(current_board_t_sqzd)
+        policy_numpy = estimated_policy.detach().cpu().numpy()[0]
         estimated_val = estimated_val.item()
 
         # Check if game over
         if leaf.game.is_game_over() is True:
             # If game is over, backup actual value
-            leaf.backup(leaf.game.get_winner(), game.player)
+            leaf.backup(leaf.game.get_winner())
             continue
+
         leaf.expand(policy_numpy)  # need to make sure valid moves
-        leaf.backup(estimated_val, game.player)
+        leaf.backup(estimated_val)
     return root
 
 

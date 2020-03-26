@@ -12,8 +12,7 @@ def play_game(board):
 
         while True:
             try:
-                print("\nIt is player {}'s turn".format(
-                    board.get_whose_turn()))
+                print(F"\nIt is player {board.player}'s turn")
                 move = input("Please enter your move.")
                 int_move = int(move)
                 break
