@@ -58,8 +58,8 @@ class Board(object):
                 and self.own_side_pit(pit_to_add):
             self.steal_marbles(pit_to_add)
 
-        # if pit_to_add is own home. then free turn else switch players
-        if not self.own_home(pit_to_add):
+        # if pit_to_add is own home then free turn, don't switch players
+        if self.own_home(pit_to_add):
             switch_player = False
 
         # Check for the win conditions.
