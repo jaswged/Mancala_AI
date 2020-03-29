@@ -67,7 +67,7 @@ def process_ai_move(game, depth, net, temp):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--model", default='net_iter0.pth.tar',
-                        help="Model pickle you which to play against")
+                        help="Model pickle you wish to play against")
     parser.add_argument("--search_depth", type=int, default=300,
                         help="How deep in tree to search")
     args = parser.parse_args()
