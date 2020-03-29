@@ -160,6 +160,14 @@ class Board(object):
             print("Winner is: {}".format(compare))
         return compare
 
+    def get_winner_string(self):
+        winner = self.get_winner()
+        if winner == 0:
+            to_return = "Tie!"
+        else:
+            to_return = "Player 1" if winner == 1 else "Player 2"
+        return to_return
+
     def is_game_over(self):
         return self.game_over
 

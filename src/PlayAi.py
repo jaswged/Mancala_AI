@@ -86,7 +86,7 @@ if __name__ == "__main__":
     while play_again:
         board = play_match_against_ai(net, args.search_depth)
         winner = board.get_winner()
-        print("Winner is: ")
+        print(F"Winner is: {board.get_winner_string()}")
         while True:
             again = input("Do you want to play again? (Y/N)\n")
             if again.lower() in ["y", "n"]:
