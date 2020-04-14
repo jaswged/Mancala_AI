@@ -77,7 +77,7 @@ def self_play(net, episodes, start_ind, core, temp, iteration, depth):
             # In each turn:
             #  Perform a fixed # of MCTS simulations for State at t
             #  pick move by sampling policy(state, reward) from net
-            root = search(game, depth, net)
+            root = search(state_copy, depth, net)
             policy = get_policy(root, t)
 
             # Get policy only for legal moves
