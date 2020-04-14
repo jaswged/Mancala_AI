@@ -154,10 +154,7 @@ def save_game_data(replay_buffer, value, itr, core, ind):
     # replay_buffer is [board_state, policy]
     for idx, data in enumerate(replay_buffer):
         state, pol = data
-        if idx == 0:
-            dataset.append([state, pol, 0])
-        else:
-            dataset.append([state, pol, value])
+        dataset.append([state, pol, value])
     del replay_buffer
     filename = "iter_%d/" % itr + "dataset_iter%d_core%i_%i_%s.pkl" % (
         itr, core, ind, datetime.datetime.today().strftime
