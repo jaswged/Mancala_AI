@@ -2,9 +2,12 @@ import logging
 import os
 import pickle
 from argparse import ArgumentParser
+
+from Mancala import Board
 from Train import train_net
 from Arena import Arena
-from MonteCarlo import run_monte_carlo
+#from MonteCarlo import run_monte_carlo
+from Mcts import Tree
 from NeuralNet import JasonNet
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
@@ -56,7 +59,10 @@ if __name__ == "__main__":
     for i in range(args.iteration, args.total_iterations):
         logger.info(F"Iteration {i}")
         # Play a number of Episodes (games) of self play
-        run_monte_carlo(current_NN, 0, i, episodes, search_depth)
+        tree = Tree(current_NN)
+        state = Board()
+        tree.think(state, 1000, show=True)
+        # run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Train NN from dataset of monte carlo tree search above
         train_net(current_NN, i, args.lr, args.bs, args.epochs)
