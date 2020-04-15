@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from Train import train_net
 from Arena import Arena
 from MonteCarlo import run_monte_carlo
+from Generator import generate_data
 from NeuralNet import JasonNet
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
@@ -55,8 +56,12 @@ if __name__ == "__main__":
     logger.info("Starting to train...")
     for i in range(args.iteration, args.total_iterations):
         logger.info(F"Iteration {i}")
-        # Play a number of Episodes (games) of self play
-        run_monte_carlo(current_NN, 0, i, episodes, search_depth)
+
+        # Play a number of Episodes (games) of self play to generate data
+        generate_data(current_NN, episodes, search_depth, i)
+
+        # original monte carlo
+        #run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Train NN from dataset of monte carlo tree search above
         train_net(current_NN, i, args.lr, args.bs, args.epochs)
