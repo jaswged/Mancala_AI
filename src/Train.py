@@ -34,7 +34,8 @@ def train_net(net, iter, lr, bs, epochs):
     if torch.cuda.is_available():
         net.cuda()
 
-    optimizer = optim.Adam(net.parameters(), lr=lr, betas=(0.8, 0.999))
+    optimizer = optim.Adam(net.parameters(), lr=lr, betas=(0.8, 0.999),
+                           weight_decay=1e-4)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=
                                     [50, 100, 150, 200, 250, 300, 400],
                                                gamma=0.77)
@@ -47,9 +48,8 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
     loss_function = AlphaLoss()
 
     train_set = BoardData(dataset)
-    train_loader = DataLoader(train_set, batch_size=bs,
-                              shuffle=True, num_workers=0,
-                              pin_memory=False)
+    train_loader = DataLoader(train_set, batch_size=bs, shuffle=True,
+                              num_workers=0, pin_memory=False)
     losses_per_epoch = load_results(iter + 1)
 
     logger.info("Starting training process...")
@@ -62,11 +62,11 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
         shuffle(dataset)
         for i, data in enumerate(dataset, 1):
             value = data[2]
-            policy = data[1]
-            board_t = board_to_tensor(data[0])
+            policy_tar = data[1]
+            board_tar = board_to_tensor(data[0])
 
-            policy_pred, value_pred = net(board_t)
-            policy_t = torch.tensor(policy, dtype=torch.float32)
+            policy_pred, value_pred = net(board_tar)
+            policy_t = torch.tensor(policy_tar, dtype=torch.float32)
             value_t = torch.tensor(value, dtype=torch.float32)
 
             # Set cuda on if using a gpu to avoid ASSERT FAILED error.

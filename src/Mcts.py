@@ -76,20 +76,17 @@ class Tree:
 
         # Search next state by recursively calling this function
         state.process_move(best_action)
-        # With the assumption of changing player by turn
-        q_new = -self.search(state, depth + 1)
+        q_new = self.search(state, depth + 1)
         node.update(best_action, q_new)
 
         return q_new
 
     def think(self, state, num_simulations, temperature=0, show=False):
-        # End point of MCTS
-        if show:
-            print(state)
         start, prev_time = time.time(), 0
-        #for _ in range(num_simulations):
+
         for _ in tqdm(range(num_simulations)):
-            val = self.search(copy.deepcopy(state), depth=0)
+            state_copy = copy.deepcopy(state)
+            val = self.search(state_copy, depth=0)
 
             # Display search result on every second
             if show:
@@ -108,7 +105,7 @@ class Tree:
                            #' '.join([state.action2str(a) for a in pv])))
 
         #  Return probability distribution weighted by number of sims
-        n = root = self.nodes[state.board_key()].n + 1
+        n = self.nodes[state.board_key()].n + 1
         n = (n / np.max(n)) ** (1 / (temperature + 1e-8))
         return n / n.sum()
 
