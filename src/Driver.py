@@ -2,12 +2,10 @@ import logging
 import os
 import pickle
 from argparse import ArgumentParser
-import numpy as np
-from Mancala import Board
 from Train import train_net
 from Arena import Arena
-#from MonteCarlo import run_monte_carlo
-from Mcts import Tree
+from MonteCarlo import run_monte_carlo
+from Generator import generate_data
 from NeuralNet import JasonNet
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s',
@@ -58,15 +56,12 @@ if __name__ == "__main__":
     logger.info("Starting to train...")
     for i in range(args.iteration, args.total_iterations):
         logger.info(F"Iteration {i}")
-        # Play a number of Episodes (games) of self play
-        tree = Tree(current_NN)
-        state = Board()
-        move = tree.think(state, 1000, show=True)
-        legal_moves = state.get_legal_moves()
-        mv = state.policy_for_legal_moves(legal_moves, move)
-        move = np.random.choice(legal_moves, p=mv)
-        state.process_move(move)
-        # run_monte_carlo(current_NN, 0, i, episodes, search_depth)
+
+        # Play a number of Episodes (games) of self play to generate data
+        generate_data(current_NN, episodes, search_depth, i)
+
+        # original monte carlo
+        #run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Train NN from dataset of monte carlo tree search above
         train_net(current_NN, i, args.lr, args.bs, args.epochs)
