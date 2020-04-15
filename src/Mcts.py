@@ -3,6 +3,7 @@ from rules.Mancala import Board
 import time
 import copy
 import torch
+from tqdm import tqdm
 
 
 class Node:
@@ -86,8 +87,9 @@ class Tree:
         if show:
             print(state)
         start, prev_time = time.time(), 0
-        for _ in range(num_simulations):
-            self.search(copy.deepcopy(state), depth=0)
+        #for _ in range(num_simulations):
+        for _ in tqdm(range(num_simulations)):
+            val = self.search(copy.deepcopy(state), depth=0)
 
             # Display search result on every second
             if show:
@@ -96,19 +98,23 @@ class Tree:
                     prev_time = tmp_time
                     root, pv = self.nodes[
                                    state.board_key()], self.pv(state)
-                    #print('%.2f sec. best %s. q = %.4f. n = %d / %d. pv = %s'
-                    #    % (tmp_time, state.action2str(pv[0]),
-                    #       root.q_sum[pv[0]] / root.n[pv[0]],
-                    #       root.n[pv[0]], root.n_all,
-                    #       ' '.join([state.action2str(a) for a in pv])))
+                    print('%.2f sec. best %s. q = %.4f. n = %d / %d. pv = %s'
+                        # % (tmp_time, state.action2str(pv[0]),
+                         % (tmp_time, pv[0],
+                         root.q_sum[pv[0]] / root.n[pv[0]],
+                         root.n[pv[0]], root.n_all,
+                            #' '.join(
+                            pv))
+                           #' '.join([state.action2str(a) for a in pv])))
 
-        #  Return probability distribution weighted by the number of simulations
+        #  Return probability distribution weighted by number of sims
         n = root = self.nodes[state.board_key()].n + 1
         n = (n / np.max(n)) ** (1 / (temperature + 1e-8))
         return n / n.sum()
 
     def pv(self, state):
-        # Return principal variation (action sequence which is considered as the best)
+        # Return principal variation
+        # (action sequence which is considered as the best)
         s, pv_seq = copy.deepcopy(state), []
         while True:
             key = s.board_key()
