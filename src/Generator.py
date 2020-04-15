@@ -56,7 +56,7 @@ def self_play(net, episodes, temp, iteration, depth):
             #  Perform a fixed # of MCTS simulations for State at t
             #  pick move by sampling policy(state, reward) from net
             root = Tree(net)
-            policy = root.think(game_copy, depth, show=False)
+            policy = root.think(game_copy, depth, t, show=False)
             legal_moves = game_copy.get_legal_moves()
 
             mv = game_copy.policy_for_legal_moves(legal_moves, policy)

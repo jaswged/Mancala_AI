@@ -86,7 +86,7 @@ class Tree:
 
         for _ in tqdm(range(num_simulations)):
             state_copy = copy.deepcopy(state)
-            val = self.search(state_copy, depth=0)
+            self.search(state_copy, depth=0)
 
             # Display search result on every second
             if show:
