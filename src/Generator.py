@@ -18,6 +18,7 @@ logger = logging.getLogger(__file__)
 
 def generate_data(net, episodes, depth, iteration):
     print("Generate data for training")
+    make_training_directory(iteration)
 
     if torch.cuda.is_available():
         net.cuda()
@@ -72,6 +73,13 @@ def self_play(net, episodes, temp, iteration, depth):
             move_count += 1
 
         save_game_data(replay_buffer, value, iteration, ind)
+
+
+def make_training_directory(iteration):
+    if not os.path.isdir("./datasets/iter_%d" % iteration):
+        if not os.path.isdir("datasets"):
+            os.mkdir("datasets")
+        os.mkdir("datasets/iter_%d" % iteration)
 
 
 def save_game_data(replay_buffer, value, itr, ind):
