@@ -84,7 +84,7 @@ class Tree:
     def think(self, state, num_simulations, temperature=0, show=False):
         start, prev_time = time.time(), 0
 
-        for _ in tqdm(range(num_simulations)):
+        for _ in range(num_simulations):
             state_copy = copy.deepcopy(state)
             self.search(state_copy, depth=0)
 
