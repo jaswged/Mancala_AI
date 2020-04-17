@@ -30,13 +30,15 @@ if __name__ == "__main__":
                         help="Nbr of processes to run MCTS self-plays")
     parser.add_argument("--episodes", type=int, default=150,
                         help="Nbr of games to play")
-    parser.add_argument("--search_depth", type=int, default=300,
+    parser.add_argument("--search_depth", type=int, default=500,
                         help="How deep in tree to search")
     parser.add_argument("--bs", type=int, default=32, help="Batch size")
     parser.add_argument("--lr", type=int, default=1e-4,
                         help="Learning Rate")
     parser.add_argument("--epochs", type=int, default=25,
                         help="Number of epochs to train")
+    parser.add_argument("--mcts", type=int, default=True,
+                        help="Use Mcts file instead of MonteCarlo.py")
 
     args = parser.parse_args()
 
@@ -44,6 +46,7 @@ if __name__ == "__main__":
     search_depth = args.search_depth
     logger.debug("Number of episodes: {} and search depth {}"
                  .format(episodes, search_depth))
+    mcts = args.mcts
 
     # Setup NN
     net = JasonNet()
@@ -57,11 +60,13 @@ if __name__ == "__main__":
     for i in range(args.iteration, args.total_iterations):
         logger.info(F"Iteration {i}")
 
-        # Play a number of Episodes (games) of self play to generate data
-        generate_data(current_NN, episodes, search_depth, i)
-
-        # original monte carlo
-        #run_monte_carlo(current_NN, 0, i, episodes, search_depth)
+        #if mcts flag is set use mcts file, otherwise MonteCarlo.py
+        if mcts:
+            # Play a number of Episodes (games) of self play to generate data
+            generate_data(current_NN, episodes, search_depth, i)
+        else:
+            #b original monte carlo
+            run_monte_carlo(current_NN, 0, i, episodes, search_depth)
 
         # Train NN from dataset of monte carlo tree search above
         train_net(current_NN, i, args.lr, args.bs, args.epochs)
@@ -69,7 +74,7 @@ if __name__ == "__main__":
         # Fight new version against reigning champion in the Arena
         # Even with first iteration just battle against yourself
         arena = Arena(best_NN, current_NN)
-        best_NN = arena.battle(episodes//2, search_depth)
+        best_NN = arena.battle(episodes//2, search_depth, mcts)
         # Save the winning net as a Pickle for battle later
         save_as_pickle(i, best_NN)
 

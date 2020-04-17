@@ -2,6 +2,8 @@ import logging
 import torch
 import numpy as np
 from tqdm import tqdm
+
+from Mcts import Tree
 from rules.Mancala import Board
 from MonteCarlo import search, get_policy
 
@@ -16,7 +18,7 @@ class Arena:
         self.best_net = best_net
         self.new_net = new_net
 
-    def battle(self, episodes, search_depth):
+    def battle(self, episodes, depth, mcts):
         """ Battle the 2 NN against each other and
             return the winner if they win 55% of the matches """
         logger.info("Battle the nets to the death in the Arena")
@@ -24,7 +26,7 @@ class Arena:
 
         for _ in tqdm(range(episodes)):
             with torch.no_grad():
-                winner = self.play_match(search_depth)
+                winner = self.play_match(depth, mcts)
                 logger.debug("%s wins!" % winner)
             if winner == "new":
                 new_wins += 1
@@ -38,7 +40,7 @@ class Arena:
             logger.info("Reigning champion lives on!")
             return self.best_net
 
-    def play_match(self, search_depth):
+    def play_match(self, depth, mcts):
         # Switch which net goes first randomly
         if np.random.uniform(0, 1) <= 0.5:
             first = self.new_net
@@ -58,11 +60,15 @@ class Arena:
 
         while game_over is False:
             if game.player == 1:
-                root = search(game, search_depth, first)
-                policy = get_policy(root, temp)
+                if mcts:
+                    policy = get_mcts_policy(game, depth, first, temp)
+                else:
+                    policy = get_policy_moves(game, depth, first, temp)
             else:
-                root = search(game, search_depth, second)
-                policy = get_policy(root, temp)
+                if mcts:
+                    policy = get_mcts_policy(game, depth, second, temp)
+                else:
+                    policy = get_policy_moves(game, depth, second, temp)
 
             # Process best move
             legal_moves = game.get_legal_moves()
@@ -80,3 +86,17 @@ class Arena:
             return s
         else:
             return None
+
+
+def get_policy_moves(game, depth, net, temp):
+    root = search(game, depth, net)
+    policy = get_policy(root, temp)
+    logger.debug(policy)
+    return policy
+
+
+def get_mcts_policy(game, depth, net, temp):
+    root = Tree(net)
+    policy = root.think(game, depth, temp, show=False)
+    logger.debug(policy)
+    return policy
