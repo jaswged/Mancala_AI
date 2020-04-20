@@ -62,7 +62,8 @@ def process_ai_move(game, depth, net, temp, mcts):
 
     legal_moves = game.get_legal_moves()
     policy = game.policy_for_legal_moves(legal_moves, policy)
-    move = np.random.choice(legal_moves, p=policy)
+    # Choose best move from position
+    move = legal_moves[policy.index(max(policy))]
     return move
 
 
@@ -80,10 +81,10 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--model", default='net_iter0.pth.tar',
                         help="Model pickle you wish to play against")
-    parser.add_argument("--search_depth", type=int, default=500,
+    parser.add_argument("--search_depth", type=int, default=777,
                         help="How deep in tree to search")
     parser.add_argument("--mcts", type=int, default=True,
-                        help="Use Mcts file instead of MonteCarlo.py")
+                        help="Use Mcts.py instead of MonteCarlo.py")
     args = parser.parse_args()
 
     best_net = args.model

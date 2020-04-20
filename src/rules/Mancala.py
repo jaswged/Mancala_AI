@@ -202,22 +202,20 @@ class Board(object):
                                                 self.current_board[5]))
 
     def board_key(self):
-        return "0:{}   1:{}  2:{}  3:{}  4:{}  5:{}  6:{}  7:{}  " \
-               "8:{}  9:{}  10:{}   11:{}   12:{}  13:{}".format(
+        return "0:{}   1:{}  2:{}  3:{}  4:{}  5:{}  " \
+               "7:{} 8:{}  9:{}  10:{}   11:{}   12:{}".format(
                                                 self.current_board[0],
                                                 self.current_board[1],
                                                 self.current_board[2],
                                                 self.current_board[3],
                                                 self.current_board[4],
                                                 self.current_board[5],
-                                                self.current_board[6],
                                                 self.current_board[7],
                                                 self.current_board[8],
                                                 self.current_board[9],
                                                 self.current_board[10],
                                                 self.current_board[11],
-                                                self.current_board[12],
-                                                self.current_board[13])
+                                                self.current_board[12])
 
     def current_board_str(self):
         return "Player {}'s turn" \
