@@ -1,9 +1,7 @@
 import numpy as np
-from rules.Mancala import Board
 import time
 import copy
 import torch
-from tqdm import tqdm
 
 
 class Node:
@@ -107,7 +105,8 @@ class Tree:
         #  Return probability distribution weighted by number of sims
         n = self.nodes[state.board_key()].n + 1
         n = (n / np.max(n)) ** (1 / (temperature + 1e-8))
-        return n / n.sum()
+        old_return = n / n.sum()
+        return self.nodes[state.board_key()].p
 
     def pv(self, state):
         # Return principal variation
