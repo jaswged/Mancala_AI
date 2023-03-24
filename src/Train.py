@@ -75,8 +75,7 @@ def train(net, dataset, optim, scheduler, iter, bs, epochs):
                 policy_t = policy_t.cuda()
 
             # Calculate loss. sub array may fail
-            loss = loss_function(value_pred[:, 0], value_t, policy_pred,
-                                 policy_t)
+            loss = loss_function(value_pred[:, 0], value_t, policy_pred, policy_t)
 
             optim.zero_grad()
             loss.backward()
